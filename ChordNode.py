@@ -39,10 +39,9 @@ class ChordNode:
 
     # Method to find the successor of a given id
     def find_succ(self, id: int) -> 'ChordNodeReference':
-        if id == self.id:
-            return self.ref
+        # if id == self.id:
+        #     return self.ref
         node = self.find_pred(id)  # Find predecessor of id
-
         return node.succ
         # return self.succ if node.id == id else node.successor
 
@@ -66,7 +65,7 @@ class ChordNode:
             self.succ = node.find_successor(self.id)
             print(f"[-] seteo de sucessor a {self.succ}")
 
-            # Just one node in the ring currently
+            # Second node joins to chord ring
             if self.succ.succ.id == self.succ.id:
                 # Notify node he is not alone
                 self.succ.not_alone_notify(self.ref)
