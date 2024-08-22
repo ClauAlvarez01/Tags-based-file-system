@@ -47,6 +47,9 @@ class ChordNodeReference:
     def notify(self, node: 'ChordNodeReference'):
         self._send_data(NOTIFY, f'{node.id},{node.ip}')
 
+    def reverse_notify(self, node: 'ChordNodeReference'):
+        self._send_data(REVERSE_NOTIFY, f'{node.id},{node.ip}')
+
     def not_alone_notify(self, node: 'ChordNodeReference'):
         self._send_data(NOT_ALONE_NOTIFY, f'{node.id},{node.ip}')
 

@@ -70,7 +70,7 @@ Luego en el constructor instanciamos el logger, que será quien muestre el estad
 
 - `_inbetween`: Es una funcion auxiliar de la clase para determinar si un $k$ está entre dos otros numeros, $start$ y $end$. Lo que hace es comprobarlo de forma circular, porque es para los ID del anillo.
 
-- `find_pred`: Lo que tiene q hacer es, dado un ID, determinar cual es el primer CN que precede a ese ID, y luego devuelve una referencia de él. El recorrido lo hace caminando por los predecesores (<u>esto sale de forma lineal, más adelante hay que usar la finger table para q sea logaritmico</u>)
+- `find_pred`: Lo que tiene q hacer es, dado un ID, determinar cual es el primer CN que precede a ese ID, y luego devuelve una referencia de él. El recorrido lo hace caminando por los sucesores (<u>esto sale de forma lineal, más adelante hay que usar la finger table para q sea logaritmico</u>)
 
 - `find_succ`: Su funcionamiento se basa en la siguiente idea. El sucesor de ese ID, debe ser el sucesor del predecesor de es ID.
 
@@ -88,8 +88,18 @@ Luego en el constructor instanciamos el logger, que será quien muestre el estad
 
   Entonces lo que hace `stabilize` es actuar en un nodo, si no es el único de la red (es lo que comprueba la primera condicional). Sea $A$ un nodo que hace `stabilize`, y sea $X$ el predecesor del sucesor de $A$. Comprueba si $X$ es un nodo que repentinamente se ha colocado entre $A$ y su sucesor, en cuyo caso lo asume como su sucesor. Finalmente, sin importar si hubo alguien entre $A$ y su sucesor, $A$ notifica a su sucesor para sugerirle que él debe ser su predecesor.
 
-- `notify`: Es una función de un nodo, que es llamada por otro nodo, para sugerirle que él puede ser su sucesor. Cuando al nodo llega la notificación desde el parámetro *node*, comprueba q no se haya autonotificado, y entonces:
+- `notify`: Es una función de un nodo, que es llamada por otro nodo, para sugerirle que él puede ser su predecesor. Cuando al nodo llega la notificación desde el parámetro *node*, comprueba q no se haya autonotificado, y entonces:
 
-  - si el nodo no tiene predecesor, se asigna el nodo que le notificó como predecesor
+  - si el nodo no tiene predecesor, se asigna el nodo que le notificó, como predecesor
   - sino, comprueba que ese nodo q le notificó siga estando vivo, y que esté entre él y su predecesor, para entonces asignárselo.
+  
+- `check_predecesors`: Esta función es otra función que se ejecuta en un hilo ininterrumpido en el constructor del nodo. Es la de cada nodo, encargada de hacer comprobaciones constantes sobre su propio predecesor, para comprobar que sigue vivo. En caso de no estarlo, tiene q asignarse alguien de predecesor, y va a ser el nodo que era predecesor de su predecesor. Se asigna dicho predecesor y luego le sugiere al mismo que lo tome como sucesor, utilizando la función `reverse_notify`.
+
+  - `reverse_notify`: Función de cada nodo encargada de asignarse como sucesor, el nodo que lo notifica.
+
+  En caso de que el predecesor encontrado sea el propio nodo, significa que el nodo se ha quedado solo en el anillo, por lo que debe definir su predecesor como `None`.
+
+
+
+
 

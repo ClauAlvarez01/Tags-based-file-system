@@ -27,7 +27,7 @@ class ChordNode:
         # Start threads
         threading.Thread(target=self.stabilize, daemon=True).start()  # Start stabilize thread
         # threading.Thread(target=self.fix_fingers, daemon=True).start()  # Start fix fingers thread
-        # threading.Thread(target=self.check_predecessor, daemon=True).start()  # Start check predecessor thread
+        threading.Thread(target=self.check_predecessor, daemon=True).start()  # Start check predecessor thread
         threading.Thread(target=self.start_server, daemon=True).start()  # Start server thread
     
     # Helper method to check if a value is in the range (start, end]
@@ -49,7 +49,7 @@ class ChordNode:
     def find_pred(self, id: int) -> 'ChordNodeReference':
         node = self
         while not self._inbetween(id, node.id, node.succ.id):
-            node = node.pred
+            node = node.succ
             # node = node.closest_preceding_finger(id)
         return node.ref if isinstance(node, ChordNode) else node
 
@@ -80,24 +80,29 @@ class ChordNode:
         while True:
             if self.succ.id != self.id:
                 print('[*] Stabilizating...')
-                x = self.succ.pred
 
-                if x.id != self.id:
-                    print("[-] mi sucesor dice que su predecesor no soy yo")
-                    
-                    # Check is there is anyone between me and my successor
-                    if x and self._inbetween(x.id, self.id, self.succ.id):
-                        # Setearlo si no es el mismo
-                        if x.id != self.succ.id:
-                            print("[-] hay alguien entre mi sucesor y yo")
-                            print(f"es: {x.id}")
-                            self.succ = x
-                    
-                    # Notify mi successor
-                    self.succ.notify(self.ref)
-                    print('[*] end stabilize...')
+                # Check successor is alve before stabilization
+                if self.succ.check_node():
+                    x = self.succ.pred
+
+                    if x.id != self.id:
+                        print("[-] mi sucesor dice que su predecesor no soy yo")
+                        
+                        # Check is there is anyone between me and my successor
+                        if x and self._inbetween(x.id, self.id, self.succ.id):
+                            # Setearlo si no es el mismo
+                            if x.id != self.succ.id:
+                                print("[-] hay alguien entre mi sucesor y yo")
+                                print(f"es: {x.id}")
+                                self.succ = x
+                        
+                        # Notify mi successor
+                        self.succ.notify(self.ref)
+                        print('[*] end stabilize...')
+                    else:
+                        print("[*] already stable")
                 else:
-                    print("[*] already stable")
+                    print("[*] I lost my successor, waiting for predecesor check...")
 
             self.logger.refresh()
             time.sleep(10)
@@ -118,6 +123,12 @@ class ChordNode:
                     print(f"[-] cambié mi predecesor a {node.id}")
                     self.pred = node
         print(f"[*] end act...")
+
+    def reverse_notify(self, node: 'ChordNodeReference'):
+        print(f"[*] Node {node.id} reversed notified me, acting...")
+        self.succ = node
+        print(f"[*] end act...")
+
             
     def not_alone_notify(self, node: 'ChordNodeReference'):
         print(f"[*] Node {node.id} say I am not alone now, acting..")
@@ -132,7 +143,24 @@ class ChordNode:
 
     # Check predecessor method to periodically verify if the predecessor is alive
     def check_predecessor(self):
-        pass
+        while True:
+            print("[*] Checking predecesor...")
+            try:
+                if self.pred and not self.pred.check_node():
+
+                    self.pred = self.find_pred(self.pred.id)
+                    self.pred.reverse_notify(self.ref)
+
+                    if self.pred.id == self.id:
+                        self.pred = None
+                        
+
+            except Exception as e:
+                self.pred = None
+                self.succ = self.ref
+
+            time.sleep(10)
+            pass
 
     # Store key method to store a key-value pair and replicate to the successor
     def store_key(self, key: str, value: str):
@@ -174,13 +202,18 @@ class ChordNode:
             ip = data[2]
             self.notify(ChordNodeReference(ip, self.port))
 
+        elif option == REVERSE_NOTIFY:
+            print(f"[*] {addr} requested REVERSE_NOTIFY...")
+            ip = data[2]
+            self.reverse_notify(ChordNodeReference(ip, self.port))
+
         elif option == NOT_ALONE_NOTIFY:
             print(f"[*] {addr} requested NOT_ALONE_NOTIFY...")
             ip = data[2]
             self.not_alone_notify(ChordNodeReference(ip, self.port))
 
         elif option == CHECK_NODE:
-            print(f"[*] {addr} requested CHECK_PREDECESSOR...")
+            print(f"[*] {addr} requested CHECK_NODE...")
             data_resp = self.ref
 
 
@@ -216,6 +249,7 @@ if __name__ == "__main__":
 
     # Create node
     node = ChordNode(ip)
+    print(f"[IP]: {ip}")
 
     # Single node case
     if len(sys.argv) == 1:
