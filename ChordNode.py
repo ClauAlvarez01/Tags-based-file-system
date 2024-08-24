@@ -7,6 +7,7 @@ from utils import *
 from ipaddress import ip_address
 from logger import Logger
 from ChordNodeReference import ChordNodeReference
+from leader_election import LeaderElection
 
 
 class ChordNode:
@@ -15,20 +16,34 @@ class ChordNode:
         self.id = getShaRepr(ip)
         self.port = port
         self.ref: ChordNodeReference = ChordNodeReference(self.ip, self.port)
-        self.succ: ChordNodeReference = self.ref  # Initial successor is itself
-        self.pred: ChordNodeReference = None  # Initially no predecessor
+        self.succ: ChordNodeReference = self.ref
+        self.pred: ChordNodeReference = None
         self.m = m  # Number of bits in the hash/key space
         self.finger = [self.ref] * self.m  # Finger table
         self.next = 0  # Finger table index to fix next
 
+        self.election = LeaderElection()
+        
         # Start logger
         self.logger = Logger(self)
 
         # Start threads
-        threading.Thread(target=self.stabilize, daemon=True).start()  # Start stabilize thread
-        # threading.Thread(target=self.fix_fingers, daemon=True).start()  # Start fix fingers thread
-        threading.Thread(target=self.check_predecessor, daemon=True).start()  # Start check predecessor thread
-        threading.Thread(target=self.start_server, daemon=True).start()  # Start server thread
+        threading.Thread(target=self.stabilize, daemon=True).start()            # Stabilize thread
+        # threading.Thread(target=self.fix_fingers, daemon=True).start()        # Fix fingers thread
+        threading.Thread(target=self.check_predecessor, daemon=True).start()    # Check predecessor thread
+        threading.Thread(target=self.start_server, daemon=True).start()         # Server thread
+        threading.Thread(target=self.election.loop, daemon=True).start()        # Leader election thread
+        threading.Thread(target=self._leader_checker, daemon=True).start()      # Periodical leader check TEMPORAL
+
+    # TEMPORAL - Periodical leader check
+    def _leader_checker(self):
+        while True:
+            time.sleep(10)
+            leader_node = ChordNodeReference(self.election.get_leader())
+            if not leader_node.check_node():
+                print("[🔷] Leader lost")
+                self.election.leader_lost()
+
     
     # Helper method to check if a value is in the range (start, end]
     def _inbetween(self, k: int, start: int, end: int) -> bool:
@@ -63,6 +78,8 @@ class ChordNode:
         if node:
             self.pred = None
             self.succ = node.find_successor(self.id)
+            self.election.adopt_leader(node.get_leader())
+
             print(f"[-] seteo de sucessor a {self.succ}")
 
             # Second node joins to chord ring
@@ -144,7 +161,7 @@ class ChordNode:
     # Check predecessor method to periodically verify if the predecessor is alive
     def check_predecessor(self):
         while True:
-            print("[*] Checking predecesor...")
+            if self.pred: print("[*] Checking predecesor...")
             try:
                 if self.pred and not self.pred.check_node():
 
@@ -215,6 +232,11 @@ class ChordNode:
         elif option == CHECK_NODE:
             print(f"[*] {addr} requested CHECK_NODE...")
             data_resp = self.ref
+
+        elif option == GET_LEADER:
+            print(f"[*] {addr} requested GET_LEADER...")
+            leader_ip = self.election.get_leader()
+            data_resp = ChordNodeReference(leader_ip)
 
 
 

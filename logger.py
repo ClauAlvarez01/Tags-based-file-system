@@ -14,12 +14,18 @@ class Logger():
     def refresh(self):
         with open(self.filename, 'w') as file:
             id = str(self.node.id)
-            succ = str(self.node.succ).split(',')[0]
-            pred = str(self.node.pred).split(',')[0] if str(self.node.pred) != None else ""
+            succ = str(self.node.succ).split(',')
+            succ_id = succ[0]
+            succ_ip = succ[1]
+            pred = str(self.node.pred).split(',')
+            pred_id = pred[0] if str(self.node.pred) != "None" else ""
+            pred_ip = pred[1] if str(self.node.pred) != "None" else ""
+            lead = str(self.node.election.leader).split(',')[0] if str(self.node.election.leader) != "None" else ""
             log = f"""
 IPv4     : {self.node.ip}
-Id       : ({id[len(id)-3: len(id)]}) - {self.node.id}
-Succ     : ({succ[len(succ)-3: len(succ)]}) - {succ}
-Pred     : ({pred[len(pred)-3: len(pred)]}) - {pred}
+Id       : ({id[len(id)-3: len(id)]}) - {self.node.id} - {self.node.ip}
+Succ     : ({succ_id[len(succ_id)-3: len(succ_id)]}) - {succ_id} - {succ_ip}
+Pred     : ({pred_id[len(pred_id)-3: len(pred_id)]}) - {pred_id} - {pred_ip}
+Leader   : {lead}
 """
             file.write(log)

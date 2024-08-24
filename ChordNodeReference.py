@@ -61,6 +61,10 @@ class ChordNodeReference:
             return True
         return False
     
+    def get_leader(self) -> str:
+        leader = self._send_data(GET_LEADER).decode().split(',')[1]
+        return leader
+    
     # Method to find the closest preceding finger of a given id
     def closest_preceding_finger(self, id: int) -> 'ChordNodeReference':
         response = self._send_data(CLOSEST_PRECEDING_FINGER, str(id)).decode().split(',')

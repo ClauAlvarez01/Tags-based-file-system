@@ -54,7 +54,7 @@ ChordNodeReference es una clase auxiliar, que sirve para facilitar la comunicaci
 - `find_successor`: Análoga a la anterior
 - `succ` y `pred`: Son dos propiedades de ChordNodeReference que piden directamente el valor del sucesor y predecesor del nodo q se referencia, al referenciado.
 - `check_node`: Es una función que pregunta al referenciado si se encuentra conectado a la red. Es una función de comprobación en caso de fallas. En función de eso, reponde con un booleano.
-- `notify`, `not_alone_notify` y `closest_preceding_finger`: Funcionan de forma análoga a las anteriores.
+- `notify`, `not_alone_notify`, `get_leader` y `closest_preceding_finger`: Funcionan de forma análoga a las anteriores.
 
 
 
@@ -98,6 +98,36 @@ Luego en el constructor instanciamos el logger, que será quien muestre el estad
   - `reverse_notify`: Función de cada nodo encargada de asignarse como sucesor, el nodo que lo notifica.
 
   En caso de que el predecesor encontrado sea el propio nodo, significa que el nodo se ha quedado solo en el anillo, por lo que debe definir su predecesor como `None`.
+
+
+
+## Leader:
+
+En todo instante de tiempo del anillo de Chord, va a existir un nodo denominado líder. El concepto de líder centraliza parte del proceso de control de errores. Cuando algún nodo quiere acceder a algún recurso compartido, envía un mensaje al líder solicitando permiso para acceder al recurso, solo con el permiso del líder puede acceder. El líder garantiza el permiso solo cuando otros procesos no estén utilizando ese recurso.
+
+### Leader Election:
+
+Inicialmente, cuando tenemos un solo nodo, él se autoproclama líder. Al unirse más nodos al anillo, el líder permanece siendo el mismo. Al estar los nodos pidiendo constantemente permiso al líder para acceder a recursos, estos son capaces de notar cuando cae el líder. En ese caso, el nodo que lo detecta convoca al resto para elegir un nuevo lider. El algoritmo de elección de líder utilizado es el Bully. En el Bully, el nodo que se proclama líder es el nodo con mayor valor respecto al resto (mayor ip). El nodo que detecta la caída del lider envía el mensaje ELECTION por broadcast. Los nodos mayores que él que reciben el mensaje le responden con un mensaje OK, y luego hacen broadcast con ELECTION. Este proceso se hace en todos los nodos, y si un nodo recibe un OK, es porque existe un nodo mayor que él, vivo en el anillo, por lo que su tarea en la elección terminó. Finalmente, el nodo de mayor valor nunca recibirá una respuesta de OK a su broadcast de ELECTION, por lo que al esperar un tiempo definido, se proclama líder, enviando un broadcast de LEADER. Todos los nodos reciben el mensaje de LEADER, y lo asumen como el nuevo líder. 
+
+La implementación está en `leader_election.py`. La clase `LeaderElection` se instancia en cada uno de los nodos del anillo cuando se crean, los cuales ejecutan en un hilo ininterrumpido la función `loop` de la misma, encargada de determinar, en caso de estar en elección, cuándo el nodo termina su trabajo en la elección. Las funciones de 
+
+- `_server`: Ejecuta un servidor para escuchar los mensajes ELECTION, OK y LEADER.`
+
+- `_broadcast_msg`: Función para mandar un mensaje por broadcast.
+
+- `_bully`: Función para determinar si el primer elemento es mayor que el segundo.
+
+  Además tenemos las funciones que utiliza el nodo para interactuar con la clase LeaderElection.
+
+- `get_leader`: Para preguntar cuál es el líder actualmente.
+
+- `adopt_leader`: Utilizada por el nodo que se unen al anillo, para adoptar el líder que se encuentra elegido actualmente en el anillo.
+
+- `leader_lost`: Utilizada por el nodo cuando detectan que se perdió el líder, para comenzar el proceso de elección.
+
+> La función `_leader_checker` es una función que se ejecuta en un hilo ininterrumpido que controla periodicamente la existencia del lider en el anillo, que en caso de no existir este, convoca a elección. La existencia de esta forma de detectar la pérdida del líder es temporal, pues en la práctica, la comprobación se hace al pedir permisos de acceso a recursos al líder.
+
+
 
 
 
