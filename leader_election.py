@@ -1,6 +1,6 @@
+import threading
 import socket
 import time
-from broadcast import *
 
 # broadcast messages
 DEFAULT = 0
@@ -53,7 +53,7 @@ class LeaderElection:
 
             elif self.in_election:
                 counter += 1
-                if counter == 4:
+                if counter == 8:
                     
                     # after waiting 2 seconds, if there is no leader still, then i'm leader
                     if not self.leader or self._bully(self.id, self.leader):
