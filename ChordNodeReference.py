@@ -3,7 +3,7 @@ from const import *
 from utils import *
 
 class ChordNodeReference:
-    def __init__(self, ip: str, port: int = 8001):
+    def __init__(self, ip: str, port: int = DEFAULT_NODE_PORT):
         self.id = getShaRepr(ip)
         self.ip = ip
         self.port = port

@@ -8,10 +8,11 @@ from ipaddress import ip_address
 from logger import Logger
 from ChordNodeReference import ChordNodeReference
 from leader_election import LeaderElection
+from self_discovery import SelfDiscovery
 
 
 class ChordNode:
-    def __init__(self, ip: str, port: int = 8001, m: int = 3):
+    def __init__(self, ip: str, port: int = DEFAULT_NODE_PORT, m: int = 3):
         self.ip = ip
         self.id = getShaRepr(ip)
         self.port = port
@@ -28,12 +29,13 @@ class ChordNode:
         self.logger = Logger(self)
 
         # Start threads
-        threading.Thread(target=self.stabilize, daemon=True).start()            # Stabilize thread
-        # threading.Thread(target=self.fix_fingers, daemon=True).start()        # Fix fingers thread
-        threading.Thread(target=self.check_predecessor, daemon=True).start()    # Check predecessor thread
-        threading.Thread(target=self.start_server, daemon=True).start()         # Server thread
-        threading.Thread(target=self.election.loop, daemon=True).start()        # Leader election thread
-        threading.Thread(target=self._leader_checker, daemon=True).start()      # Periodical leader check TEMPORAL
+        threading.Thread(target=self.stabilize, daemon=True).start()              # Stabilize thread
+        # threading.Thread(target=self.fix_fingers, daemon=True).start()          # Fix fingers thread
+        threading.Thread(target=self.check_predecessor, daemon=True).start()      # Check predecessor thread
+        threading.Thread(target=self.start_server, daemon=True).start()           # Server thread
+        threading.Thread(target=self.election.loop, daemon=True).start()          # Leader election thread
+        threading.Thread(target=self._leader_checker, daemon=True).start()        # Periodical leader check TEMPORAL
+        threading.Thread(target=self.start_broadcast_server, daemon=True).start() # Broadcast server thread
 
     # TEMPORAL - Periodical leader check
     def _leader_checker(self):
@@ -262,6 +264,41 @@ class ChordNode:
 
                 threading.Thread(target=self.request_handler, args=(conn, addr, data)).start()
 
+
+
+    def start_broadcast_server(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.bind(('', DEFAULT_BROADCAST_PORT))
+
+        while True:
+            data, addr = sock.recvfrom(1024)
+
+            # Refuse self messages
+            if addr[0] == self.ip:
+                continue
+
+            print(f"[*] Broadcast message received from {addr}")
+            data = data.decode().split(',')
+            option = int(data[0])
+
+            if option == DISCOVER:
+                sender_ip = data[1]
+                sender_port = int(data[2])
+                response = f'{ENTRY_POINT},{self.ip}'
+
+
+            # Send response
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.connect((sender_ip, sender_port))
+                    s.sendall(response.encode('utf-8'))
+            except Exception as e:
+                if isinstance(e, ConnectionRefusedError):
+                    print(f"[*] someone already responded")
+                else:
+                    print(e)
+
+
                 
 
 
@@ -269,22 +306,34 @@ if __name__ == "__main__":
     # Get current IP
     ip = socket.gethostbyname(socket.gethostname())
 
-    # Create node
-    node = ChordNode(ip)
-    print(f"[IP]: {ip}")
 
-    # Single node case
+    # First node case
     if len(sys.argv) == 1:
+
+        # Create node
+        node = ChordNode(ip)
+        print(f"[IP]: {ip}")
+
         node.join()
+
 
     # Join node case
     elif len(sys.argv) == 2:
-        try:
-            target_ip = ip_address(sys.argv[1])
-        except:
-            raise Exception(f"Parameter {sys.argv[1]} is not a valid IP address")
-        
-        node.join(ChordNodeReference(sys.argv[1]))
+        flag = sys.argv[1]
+
+        if flag == "-c":
+            target_ip = SelfDiscovery(ip).find()
+
+            # Create node
+            node = ChordNode(ip)
+            print(f"[IP]: {ip}")
+
+            node.join(ChordNodeReference(target_ip))
+
+
+        else:
+            raise Exception(f"Missing flag: {flag} does not exist")
+
     else:
         raise Exception("Incorrect params")
 

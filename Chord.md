@@ -29,13 +29,11 @@
    python ChordNode.py
    ```
 
-6. Creamos el segundo nodo repitiendo los pasos anteriores a partir del 3. Pero esta vez el nodo se crea (en sustitución al paso 5) con el siguiente comando
+6. Creamos el segundo nodo repitiendo los pasos anteriores a partir del 3. Pero esta vez el nodo se crea (en sustitución al paso 5) utilizando el flag: `-c`
 
    ```bash
-   python ChordNode.py <target_ip>
+   python ChordNode.py -c
    ```
-
-   - <target_ip>: es la ip en la red de docker, del nodo a través del cual me voy a incluir en la red
 
 7. De esta misma forma se pueden incluir la cantidad de nodos deseados a la red de chord
 
@@ -105,7 +103,7 @@ Luego en el constructor instanciamos el logger, que será quien muestre el estad
 
 En todo instante de tiempo del anillo de Chord, va a existir un nodo denominado líder. El concepto de líder centraliza parte del proceso de control de errores. Cuando algún nodo quiere acceder a algún recurso compartido, envía un mensaje al líder solicitando permiso para acceder al recurso, solo con el permiso del líder puede acceder. El líder garantiza el permiso solo cuando otros procesos no estén utilizando ese recurso.
 
-### Leader Election:
+### LeaderElection:
 
 Inicialmente, cuando tenemos un solo nodo, él se autoproclama líder. Al unirse más nodos al anillo, el líder permanece siendo el mismo. Al estar los nodos pidiendo constantemente permiso al líder para acceder a recursos, estos son capaces de notar cuando cae el líder. En ese caso, el nodo que lo detecta convoca al resto para elegir un nuevo lider. El algoritmo de elección de líder utilizado es el Bully. En el Bully, el nodo que se proclama líder es el nodo con mayor valor respecto al resto (mayor ip). El nodo que detecta la caída del lider envía el mensaje ELECTION por broadcast. Los nodos mayores que él que reciben el mensaje le responden con un mensaje OK, y luego hacen broadcast con ELECTION. Este proceso se hace en todos los nodos, y si un nodo recibe un OK, es porque existe un nodo mayor que él, vivo en el anillo, por lo que su tarea en la elección terminó. Finalmente, el nodo de mayor valor nunca recibirá una respuesta de OK a su broadcast de ELECTION, por lo que al esperar un tiempo definido, se proclama líder, enviando un broadcast de LEADER. Todos los nodos reciben el mensaje de LEADER, y lo asumen como el nuevo líder. 
 
@@ -129,7 +127,13 @@ La implementación está en `leader_election.py`. La clase `LeaderElection` se i
 
 
 
+## Autodescubrimiento:
 
+Con el autodescubrimiento logramos que cuando un nodo se une al anillo, no tenga que conocer la dirección IP de ningún nodo específico. El nodo que se une logra esto emitiendo un mensaje de broadcast: DISCOVERY, junto al IP y puerto propios, que es captado por todos los nodos del anillo. Los nodos le responden con el mensaje ENTRY_POINT por un socket TCP al nodo solicitante a través de la IP y puerto enviados. El nodo está esperando las respuestas, pero solo le interesa la primera que llegue, pues esta ya contiene la ip del nodo que le va a servir de punto de entrada al anillo. Luego se une al anillo a  través de `join`.
+
+### SelfDiscovery:
+
+Cuando al inicializar el `ChordNode.py` utilizando el flag `-c`, definimos que queremos que el nodo se una a un anillo existente en la red local. Entonces creamos una instancia de la clase `SelfDiscovery` con el IP del nuevo nodo, y llamamos al método `find` de la instancia. El resultado de `find` debe ser la IP de algún nodo del anillo, que sirva como punto de entrada. La clase está compuesta por un método `_recv`, que es ejecutado en un hilo y que sirve como servidor para capturar las solicitudes TCP de un socket del nodo. Esta función es la que se encarga de recibir el mensaje de algún nodo del anillo que responda al nodo que se une. Por otro lado `find` es la encargada de enviar el mensaje inicial por broadcast a todos los nodos utilizando `_send`, y espera a que la función `_recv` ofrezca la IP del nodo que respondió al broadcast.
 
 
 
