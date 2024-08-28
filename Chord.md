@@ -8,7 +8,7 @@
 
 3. Abrir una terminal interativa de la imagen de python, utilizando como volumen el directorio del proyecto
 
-   Ejecutando el siguiente comando en una terminal abierta en el directorio del proyecto
+   Ejecutando el siguiente comando en una terminal
 
    ```bash
    docker run --rm -it -v <path_>:/app <python_img> /bin/bash
@@ -26,13 +26,13 @@
 5. Creamos un primer nodo de Chord. De esta forma tendríamos unun anillo donde solo hay un nodo
 
    ```bash
-   python ChordNode.py
+   python DataNode.py
    ```
 
 6. Creamos el segundo nodo repitiendo los pasos anteriores a partir del 3. Pero esta vez el nodo se crea (en sustitución al paso 5) utilizando el flag: `-c`
 
    ```bash
-   python ChordNode.py -c
+   python DataNode.py -c
    ```
 
 7. De esta misma forma se pueden incluir la cantidad de nodos deseados a la red de chord
@@ -53,14 +53,13 @@ ChordNodeReference es una clase auxiliar, que sirve para facilitar la comunicaci
 - `succ` y `pred`: Son dos propiedades de ChordNodeReference que piden directamente el valor del sucesor y predecesor del nodo q se referencia, al referenciado.
 - `check_node`: Es una función que pregunta al referenciado si se encuentra conectado a la red. Es una función de comprobación en caso de fallas. En función de eso, reponde con un booleano.
 - `notify`, `not_alone_notify`, `get_leader` y `closest_preceding_finger`: Funcionan de forma análoga a las anteriores.
+- <u>FALTAN LOS Q MANEJAN DATOS</u>
 
 
 
 ## ChordNode
 
 Un ChordNode corresponde a una computadora distribuida, por tanto tiene una IP propia. Esa IP se pasa al constructor de ChordNode, a partir de la cual se deduce el identificador de ese nodo, mediante una función de hash. También se almacenan: una referencia del propio nodo (un CNR), el nodo predecesor (un CNR, por defecto en None), el sucesor (un CNR, por defecto es una referencia a él mismo), m es el numero de bits del anillo (si m=3, en el anillo hay 2^3 nodos), <u>finger y next por ahora en desuso</u>.
-
-Luego en el constructor instanciamos el logger, que será quien muestre el estado del nodo en el tiempo, y creamos varios hilos, sobre los que corren funciones del anillo que actúan de forma ininterrumpida y se explicarán a continuación.
 
 ### Funciones de ChordNode:
 
@@ -99,7 +98,7 @@ Luego en el constructor instanciamos el logger, que será quien muestre el estad
 
 
 
-## Leader:
+## Líder:
 
 En todo instante de tiempo del anillo de Chord, va a existir un nodo denominado líder. El concepto de líder centraliza parte del proceso de control de errores. Cuando algún nodo quiere acceder a algún recurso compartido, envía un mensaje al líder solicitando permiso para acceder al recurso, solo con el permiso del líder puede acceder. El líder garantiza el permiso solo cuando otros procesos no estén utilizando ese recurso.
 
@@ -137,3 +136,6 @@ Cuando al inicializar el `ChordNode.py` utilizando el flag `-c`, definimos que q
 
 
 
+## DataNode:
+
+DataNode constituye una capa de abstracción que se acopla sobre ChordNode. DataNode hereda el funcionamiento básico implementado en la capa ChordNode, añadiendo un conjunto de funcionalidades que van a servir para manejar los datos del sistema. Al inicializar un DataNode, se crea un objeto Database. En database se tiene un conjunto de herramientas que manipulan directamente los datos en el almacenamiento.
