@@ -22,5 +22,7 @@ ENTRY_POINT = 14
 
 #Operation codes in DataNode
 OK = 0
-INSERT = 1
-DELETE = 2
+INSERT_TAG = 1
+DELETE_TAG = 2
+APPEND_FILE = 3
+REMOVE_FILE = 4

@@ -1,16 +1,11 @@
 import socket
 import threading
+import json
 from const import *
 from utils import *
+from db_const import *
+from typing import Dict, List
 
-END = 0
-OK = 1
-PULL_REPLICATION = 2
-# PUSH_REPLICATION = 3
-PUSH_DATA = 4
-PUSH_THIS_REPLICA = 6
-PUSH_DELETE_THIS_REPLICA = 7
-FETCH_REPLICA = 8
 
 class Database:
     def __init__(self, db_ip: str, db_port: str = DEFAULT_DB_PORT) -> None:
@@ -20,35 +15,62 @@ class Database:
         self.data = {}
         self.replicated_data = {}
 
+        self.tags: Dict[str, List[str]] = {}
+        self.replicated_tags: Dict[str, List] = {}
+
         threading.Thread(target=self._recv, daemon=True).start()
 
 
-
-    def store(self, key, value, successor_ip: str):
-        self.data[key] = value
-        self.push_this(key, value, successor_ip)
-        
-    def delete(self, key, successor_ip: str):
-        del self.data[key]
-        self.push_delete_this(key, successor_ip)
-
-    def retrieve(self, key):
-        return self.data[key]
-    
-    def constains(self, key: int) -> bool:
-        return key in self.data
     
 
+    ########### TAGS #############
+    def owns_tag(self, tag: str) -> bool:
+        return tag in self.tags
+    
+    def contains_tag(self, tag: str) -> bool:
+        return tag in self.tags or tag in self.replicated_tags
+
+    def store_tag(self, tag: str, successor_ip: str):
+        """Adds tag key to storage with empty list"""
+        self.tags[tag] = []                              # Store it
+        op = f"{REPLICATE_STORE_TAG}"
+        msg = tag
+        send_2(op, msg, successor_ip, self.db_port)      # Replicate it
+
+    def append_file(self, tag: str, file_name: str, successor_ip: str):
+        """Appends file name to given tag storage"""
+        self.tags[tag].append(file_name)                 # Store it
+        op = f"{REPLICATE_APPEND_FILE}"
+        msg = f"{tag};{file_name}"
+        send_2(op, msg, successor_ip, self.db_port)      # Replicate it
+    
+    def delete_tag(self, tag: str, successor_ip: str):
+        """Deletes tag key from storage"""
+        del self.tags[tag]                               # Store it
+        op = f"{REPLICATE_DELETE_TAG}"
+        msg = tag
+        send_2(op, msg, successor_ip, self.db_port)      # Replicate it
+
+    def remove_file(self, tag: str, file_name: str, successor_ip: str):
+        """Removes file name from given tag storage"""
+        self.tags[tag].remove(file_name)                 # Store it
+        op = f"{REPLICATE_REMOVE_FILE}"
+        msg = f"{tag};{file_name}"
+        send_2(op, msg, successor_ip, self.db_port)      # Replicate it
+    ##############################
+    
+
+
+
+
+    # Function to assume data from old failed owner
     def assume_data(self, successor_ip: str, new_predecessor_ip: str = None):
         print(f"[📥] Assuming predecesor data")
-        i = 0
 
-        # Assume replicated data
-        for k, v in self.replicated_data.items():
-            self.data[k] = v
-            i+=1
-        
-        print(f"[📥] {i} files assumed")
+        # Assume replicated tags
+        self.tags.update(self.replicated_tags)
+        print(f"[📥] {len(self.replicated_tags.items())} files assumed")
+        self.replicated_tags = {}
 
         # Let successor know my data has changed
         self.send_fetch_notification(successor_ip)
@@ -58,47 +80,39 @@ class Database:
             self.pull_replication(new_predecessor_ip)
 
 
-
+    # Function to delegate data to the new incoming owner
     def delegate_data(self, new_owner_ip: str, listener_ip: str):
         print(f"[📤] Delegating data to {new_owner_ip}")
-        i = 0
+        i_t = 0
 
         # Delgar datos
         new_owner_id = getShaRepr(new_owner_ip)
         my_id = getShaRepr(self.db_ip)
 
-        data_to_delegate = {}
-
+        tags_to_delegate = {}
         for k, v in self.data.items():
             if not inbetween(int(k), new_owner_id, my_id):
-                data_to_delegate[k] = v
-                i+=1
+                tags_to_delegate[k] = v
+                i_t+=1
 
         # Send corresponding data to new owner
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((new_owner_ip, self.db_port))
             s.sendall(f"{PUSH_DATA}".encode())
-
-            ack = s.recv(1024).decode()
-            if ack != f"{OK}":
-                raise Exception("ACK negativo")
             
-            for k, v in data_to_delegate.items():
-                s.sendall(f"{str(k)},{v}".encode())
+            # Send tags
+            json_str = json.dumps(tags_to_delegate)
+            s.sendall(json_str.encode())
 
-                ack = s.recv(1024).decode()
-                if ack != f"{OK}":
-                    raise Exception("ACK negativo")
-                
-            s.sendall(f"{END}".encode())
+            # Send ip
             s.sendall(f"{self.db_ip}".encode())
             s.close()
 
-        print(f"[📤] {i} files delegated")
+        print(f"[📤] {i_t} tags delegated")
 
         # Delete not corresponding data
-        for k, v in data_to_delegate.items():
-            del self.data[k]
+        for k, v in tags_to_delegate.items():
+            del self.tags[k]
 
         # Let know my successor i have new data
         self.send_fetch_notification(listener_ip)
@@ -106,9 +120,10 @@ class Database:
 
     # Function to pull all data from node's predecessor and store it in replication dict
     def pull_replication(self, owner_ip: str):
+        print(f"I pull replication from {owner_ip}")
 
         # Delete current replicates
-        self.replicated_data = {}
+        self.replicated_tags = {}
         
         # Get actual predecesor replicas
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -117,92 +132,21 @@ class Database:
             # Ask for replication
             s.sendall(f"{PULL_REPLICATION}".encode())
 
-            while True:
-                data = s.recv(1024).decode()
+            # Receive data
+            json_str = s.recv(1024).decode()
+            data = json.loads(json_str)
 
-                if data != f"{END}":
-                    data = data.split(',')
-                    key, value = data[0], data[1]
-                    self.replicated_data[int(key)] = value
-                    s.sendall(f"{OK}".encode())
-                else:
-                    break
+            # Overwrite replicated tags
+            self.replicated_tags = data
+
             s.close()
-
         
 
-
-
-    # def push_replication(self, target_ip: str):
-    #     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    #         s.connect((target_ip, self.db_port))
-    #         s.sendall(f"{PUSH_REPLICATION}".encode())
-
-    #         ack = s.recv(1024).decode()
-
-    #         if ack != f"{OK}":
-    #             raise Exception("ACK negativo")
-            
-    #         for k, v in self.data.items():
-    #             file = f"{str(k)},{v}".encode()
-    #             s.sendall(file)
-    #             # wait OK (a futuro cronometrar para cancelar si se demora en responder)
-    #             ack = s.recv(1024).decode()
-    #             if ack != f"{OK}":
-    #                 raise Exception("ACK negativo")
-
-    #         s.sendall(f"{END}".encode())
-
-
-    # Function to push one new data to replicated storage
-    def push_this(self, key, value, target_ip: str):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((target_ip, self.db_port))
-            s.sendall(f"{PUSH_THIS_REPLICA}".encode())
-        
-            ack = s.recv(1024).decode()
-            if ack != f"{OK}":
-                raise Exception("ACK negativo")
-            
-            file = f"{str(key)},{value}".encode()
-            s.sendall(file)
-            
-            # wait OK (a futuro cronometrar para cancelar si se demora en responder)
-            if ack != f"{OK}":
-                raise Exception("ACK negativo")
-    
-    # Function to delete an existing data of replicated storage
-    def push_delete_this(self, key, target_ip: str):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((target_ip, self.db_port))
-            s.sendall(f"{PUSH_DELETE_THIS_REPLICA}".encode())
-
-            ack = s.recv(1024).decode()
-            if ack != f"{OK}":
-                raise Exception("ACK negativo")
-            
-            id = f"{str(key)}".encode()
-            s.sendall(id)
-
-            # wait OK (a futuro cronometrar para cancelar si se demora en responder)
-            if ack != f"{OK}":
-                raise Exception("ACK negativo")
-
-    # 
+    # Function to notify my replications listeners, that my data has changed
     def send_fetch_notification(self, target_ip: str):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((target_ip, self.db_port))
-            s.sendall(f"{FETCH_REPLICA}".encode())
+        send_2(f"{FETCH_REPLICA}", self.db_ip, target_ip, self.db_port)
 
-            ack = s.recv(1024).decode()
-            if ack != f"{OK}":
-                raise Exception("ACK negativo")
-            
-            s.sendall(self.db_ip.encode())
-            
-            # wait OK (a futuro cronometrar para cancelar si se demora en responder)
-            if ack != f"{OK}":
-                raise Exception("ACK negativo")
+
 
 
 
@@ -220,81 +164,52 @@ class Database:
 
 
     def _handle_recv(self, conn: socket.socket, data: str):
-        
-        # Send all my stored data
-        if data == f"{PULL_REPLICATION}":
-            # format: <key>,<value>
-            for k, v in self.data.items():
-                file = f"{str(k)},{v}".encode()
-                conn.sendall(file)
-                # wait OK (a futuro cronometrar para cancelar si se demora en responder)
-                ack = conn.recv(1024).decode()
-                if ack != f"{OK}":
-                    raise Exception("ACK negativo")
-            
-            # last message 
-            conn.sendall(f"{END}".encode())
 
+        if data == f"{REPLICATE_STORE_TAG}":
+            conn.sendall(f"{OK}".encode())
+            tag = conn.recv(1024).decode()
+            self.replicated_tags[tag] = []
+            conn.sendall(f"{OK}".encode())
 
-        # elif data == f"{PUSH_REPLICATION}":
-        #     conn.sendall(f"{OK}".encode())
+        elif data == f"{REPLICATE_APPEND_FILE}":
+            conn.sendall(f"{OK}".encode())
+            data = conn.recv(1024).decode().split(';')
+            tag, file_name = data[0], data[1]
+            self.replicated_tags[tag].append(file_name)
+            conn.sendall(f"{OK}".encode())
 
-        #     while True:
-        #         data = conn.recv(1024).decode()
+        elif data == f"{REPLICATE_DELETE_TAG}":
+            conn.sendall(f"{OK}".encode())
+            tag = conn.recv(1024).decode()
+            del self.replicated_tags[tag]
+            conn.sendall(f"{OK}".encode())
 
-        #         if data != f"{END}":
-        #             data = data.split(',')
-        #             key, value = data[0], data[1]
-        #             self.replicated_data[key] = value
-        #             conn.sendall(f"{OK}".encode())
-        #         else:
-        #             break
-        #     conn.close()  
+        elif data == f"{REPLICATE_REMOVE_FILE}":
+            conn.sendall(f"{OK}".encode())
+            data = conn.recv(1024).decode().split(';')
+            tag, file_name = data[0], data[1]
+            self.replicated_tags[tag].remove(file_name)
+            conn.sendall(f"{OK}".encode())
+
 
         elif data == f"{PUSH_DATA}":
-            conn.sendall(f"{OK}".encode())
-
-            while True:
-                data = conn.recv(1024).decode()
-
-                if data != f"{END}":
-                    data = data.split(",")
-                    k, v = data[0], data[1]
-
-                    self.data[int(k)] = v
-
-                    conn.sendall(f"{OK}".encode())
-                else:
-                    break
+            # Receive and update tags
+            json_str = conn.recv(1024).decode()
+            new_data = json.loads(json_str)
+            self.tags.update(new_data)
 
             ip = conn.recv(1024).decode()
+
             # Let my sucessor know i have new data
             self.send_fetch_notification(ip)
-            
-
-
-
-        elif data == f"{PUSH_THIS_REPLICA}":
-            conn.sendall(f"{OK}".encode())
-
-            data = conn.recv(1024).decode().split(',')
-            key, value = data[0], data[1]
-
-            self.replicated_data[int(key)] = value
-
-            conn.sendall(f"{OK}".encode())
-
-
-        elif data == f"{PUSH_DELETE_THIS_REPLICA}":
-            conn.sendall(f"{OK}".encode())
-
-            key = conn.recv(1024).decode()
-
-            del self.replicated_data[int(key)]
-
-            conn.sendall(f"{OK}".encode())
-
         
+
+        # Send all my stored data
+        elif data == f"{PULL_REPLICATION}":
+            json_str = json.dumps(self.tags)
+            conn.sendall(json_str.encode())
+
+
         elif data == f"{FETCH_REPLICA}":
             conn.sendall(f"{OK}".encode())
 
@@ -303,6 +218,9 @@ class Database:
             self.pull_replication(ip)
 
             conn.sendall(f"{OK}".encode())
+
+
+
 
 
         conn.close()

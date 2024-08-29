@@ -31,29 +31,21 @@ class DataNode(ChordNode):
     def temporal_insert(self):
         time.sleep(5)
         if self.ip == '172.17.0.2':
-            print("🔼 Insertando")
-            response = self.ref.insert("Hola").split(",")
+            print("🔼 Insertando tag")
+            response = self.ref.insert_tag("rojo").split(",")
             print(response)
-            # time.sleep(1)
-            print("🔼 Insertando")
-            response = self.ref.insert("WXWXW").split(",")
-            print(response)
-
-            # time.sleep(1)
-            print("🔼 Insertando")
-            response = self.ref.insert("08mwx4r7gr2864x9").split(",")
+            print("🔼 Insertando tag")
+            response = self.ref.insert_tag("azul").split(",")
             print(response)
 
-            # time.sleep(5)
-            print("🔼 Insertando")
-            response = self.ref.insert("kkkkkkkkkkae akwme awe aw w3mrvw3mklw3klrvw3lkmlw").split(",")
+            print("🔼 Insertando file en tag")
+            response = self.ref.append_file("rojo", "file1").split(",")
             print(response)
 
-            # time.sleep(5)
-            print("🔼 Insertando")
-            response = self.ref.insert("                   U                      ").split(",")
+            print("🔼 Insertando file en tag")
+            response = self.ref.append_file("azul", "file2").split(",")
             print(response)
-
+            
 
 
 
@@ -73,42 +65,71 @@ class DataNode(ChordNode):
 
 
 
-    def _handle_insert(self, data: list):
-        name = data[0]
-        info_hash = getShaRepr(name)
-        owner = self.find_succ(info_hash)
+    def _handle_insert_tag(self, data: list):
+        tag = data[0]
+        tag_hash = getShaRepr(tag)
+        owner = self.find_succ(tag_hash)
 
         # I am owner
         if owner.id == self.id:
-            if self.database.constains(info_hash):
+            if self.database.owns_tag(tag):
                 return "ERROR,Key already exists"
             else:
-                self.database.store(info_hash, name, self.succ.ip)
+                self.database.store_tag(tag, self.succ.ip)
                 return "OK,Data inserted"
-        # I am not owner
+        # I am not owner, foward
         else:
-            response = owner.insert(name)
+            response = owner.insert_tag(tag)
             return response
         
 
         
-    def _handle_delete(self, data: list):
-        name = data[0]
-        name_hash = getShaRepr(name)
-        owner = self.find_succ(name_hash)
+    def _handle_delete_tag(self, data: list):
+        tag = data[0]
+        tag_hash = getShaRepr(tag)
+        owner = self.find_succ(tag_hash)
 
         # I am owner
         if owner.id == self.id:
-            if not self.database.constains(name_hash):
+            if not self.database.owns_tag(tag):
                 return "ERROR,Key does not exists"
             else:
-                self.database.delete(name_hash, self.succ.ip)
+                self.database.delete_tag(tag, self.succ.ip)
                 return "OK,Data deleted"
         # I am not owner
         else:
-            response = owner.delete(name)
+            response = owner.delete_tag(tag)
             return response
 
+
+    def _handle_append_file(self, data: list):
+        tag, file_name = data[0], data[1]
+        tag_hash = getShaRepr(tag)
+        owner = self.find_succ(tag_hash)
+
+        # I am owner
+        if owner.id == self.id:
+            self.database.append_file(tag, file_name, self.succ.ip)
+            return "OK,Data appended"
+        # I am not owner
+        else:
+            response = owner.append_file(tag, file_name)
+            return response
+        
+
+    def _handle_remove_file(self, data: list):
+        tag, file_name = data[0], data[1]
+        tag_hash = getShaRepr(tag)
+        owner = self.find_succ(tag_hash)
+
+        # I am owner
+        if owner.id == self.id:
+            self.database.remove_file(tag, file_name, self.succ.ip)
+            return "OK,Data deleted"
+        # I am not owner
+        else:
+            response = owner.remove_file(tag, file_name)
+            return response
         
 
         
@@ -117,12 +138,17 @@ class DataNode(ChordNode):
         option = int(data[0])
 
         # Switch operation
-        if option == INSERT:
-            response = self._handle_insert(data[1:])
+        if option == INSERT_TAG:
+            response = self._handle_insert_tag(data[1:])
             
-        elif option == DELETE:
-            response = self._handle_delete(data[1:])
+        elif option == DELETE_TAG:
+            response = self._handle_delete_tag(data[1:])
 
+        elif option == APPEND_FILE:
+            response = self._handle_append_file(data[1:])
+
+        elif option == REMOVE_FILE:
+            response = self._handle_remove_file(data[1:])
 
         
         if response:

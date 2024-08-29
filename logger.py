@@ -17,7 +17,7 @@ class Logger():
     def format_data(self, list: dict):
         result = ""
         for k, v in list.items():
-            result += f"\t{str(k)} - {v}\n"
+            result += f"\t{k} - {v}\n"
             # result += f"\t\t{str(k)[:5]}...{str(k)[len(str(k))-3:]} - {v}\n"
         return result
     
@@ -44,9 +44,9 @@ Pred     : ({pred_id[len(pred_id)-3: len(pred_id)]}) - {pred_id} - {pred_ip}
 Leader   : {lead}
 
 Data       :
-{self.format_data(self.node.database.data)}
+{self.format_data(self.node.database.tags)}
 
 Replicated :
-{self.format_data(self.node.database.replicated_data)}
+{self.format_data(self.node.database.replicated_tags)}
 """
                 file.write(log)
