@@ -111,6 +111,23 @@ class ChordNodeReference:
     def remove_file(self, tag: str, file_name: str):
         response = self._send_data_data(REMOVE_FILE, f"{tag},{file_name}").decode()
         return response
+    
+    
+    def insert_file(self, file_name: str) -> str:
+        response = self._send_data_data(INSERT_FILE, file_name).decode()
+        return response
+
+    def delete_file(self, file_name: str) -> str:
+        response = self._send_data_data(DELETE_FILE, file_name).decode()
+        return response
+    
+    def append_tag(self, file_name: str, tag: str):
+        response = self._send_data_data(APPEND_TAG, f"{file_name},{tag}").decode()
+        return response
+    
+    def remove_tag(self, file_name: str, tag: str):
+        response = self._send_data_data(REMOVE_TAG, f"{file_name},{tag}").decode()
+        return response
 
     # ====================================================================
 

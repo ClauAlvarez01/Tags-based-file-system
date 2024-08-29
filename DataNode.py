@@ -41,10 +41,40 @@ class DataNode(ChordNode):
             print("🔼 Insertando file en tag")
             response = self.ref.append_file("rojo", "file1").split(",")
             print(response)
-
             print("🔼 Insertando file en tag")
             response = self.ref.append_file("azul", "file2").split(",")
             print(response)
+
+            print("🔼 Insertando file")
+            response = self.ref.insert_file("file1").split(",")
+            print(response)
+            print("🔼 Insertando file")
+            response = self.ref.insert_file("file2").split(",")
+            print(response)
+
+            print("🔼 Insertando tag en file")
+            response = self.ref.append_tag("file1", "rojo").split(",")
+            print(response)
+            print("🔼 Insertando tag en file")
+            response = self.ref.append_tag("file2", "azul").split(",")
+            print(response)
+
+            time.sleep(60)
+            print("🔼 Insertando posteriormente un file con tags")
+            self.ref.insert_file("perro.png")
+            self.ref.insert_tag("manchado")
+            self.ref.insert_tag("peludo")
+            self.ref.insert_tag("pesao")
+            self.ref.append_file("manchado", "perro.png")
+            self.ref.append_file("peludo", "perro.png")
+            self.ref.append_file("pesao", "perro.png")
+            self.ref.append_tag("perro.png", "manchado")
+            self.ref.append_tag("perro.png", "peludo")
+            self.ref.append_tag("perro.png", "pesao")
+
+            self.ref.delete_file("file1")
+            self.ref.remove_file("rojo", "file1")
+
             
 
 
@@ -65,11 +95,13 @@ class DataNode(ChordNode):
 
 
 
+
+
+    ############################ HANDLERS ###############################
     def _handle_insert_tag(self, data: list):
         tag = data[0]
         tag_hash = getShaRepr(tag)
         owner = self.find_succ(tag_hash)
-
         # I am owner
         if owner.id == self.id:
             if self.database.owns_tag(tag):
@@ -82,13 +114,10 @@ class DataNode(ChordNode):
             response = owner.insert_tag(tag)
             return response
         
-
-        
     def _handle_delete_tag(self, data: list):
         tag = data[0]
         tag_hash = getShaRepr(tag)
         owner = self.find_succ(tag_hash)
-
         # I am owner
         if owner.id == self.id:
             if not self.database.owns_tag(tag):
@@ -101,12 +130,10 @@ class DataNode(ChordNode):
             response = owner.delete_tag(tag)
             return response
 
-
     def _handle_append_file(self, data: list):
         tag, file_name = data[0], data[1]
         tag_hash = getShaRepr(tag)
         owner = self.find_succ(tag_hash)
-
         # I am owner
         if owner.id == self.id:
             self.database.append_file(tag, file_name, self.succ.ip)
@@ -115,7 +142,6 @@ class DataNode(ChordNode):
         else:
             response = owner.append_file(tag, file_name)
             return response
-        
 
     def _handle_remove_file(self, data: list):
         tag, file_name = data[0], data[1]
@@ -131,6 +157,66 @@ class DataNode(ChordNode):
             response = owner.remove_file(tag, file_name)
             return response
         
+
+    def _handle_insert_file(self, data: list):
+        file_name = data[0]
+        file_name_hash = getShaRepr(file_name)
+        owner = self.find_succ(file_name_hash)
+        # I am owner
+        if owner.id == self.id:
+            if self.database.owns_file(file_name):
+                return "ERROR,Key already exists"
+            else:
+                self.database.store_file(file_name, self.succ.ip)
+                return "OK,Data inserted"
+        # I am not owner, foward
+        else:
+            response = owner.insert_file(file_name)
+            return response
+        
+    def _handle_delete_file(self, data: list):
+        file_name = data[0]
+        file_name_hash = getShaRepr(file_name)
+        owner = self.find_succ(file_name_hash)
+        # I am owner
+        if owner.id == self.id:
+            if not self.database.owns_file(file_name):
+                return "ERROR,Key does not exists"
+            else:
+                self.database.delete_file(file_name, self.succ.ip)
+                return "OK,Data deleted"
+        # I am not owner
+        else:
+            response = owner.delete_file(file_name)
+            return response
+        
+    def _handle_append_tag(self, data: list):
+        file_name, tag = data[0], data[1]
+        file_name_hash = getShaRepr(file_name)
+        owner = self.find_succ(file_name_hash)
+        # I am owner
+        if owner.id == self.id:
+            self.database.append_tag(file_name, tag, self.succ.ip)
+            return "OK,Data appended"
+        # I am not owner
+        else:
+            response = owner.append_tag(file_name, tag)
+            return response
+        
+    def _handle_remove_tag(self, data: list):
+        file_name, tag = data[0], data[1]
+        file_name_hash = getShaRepr(file_name)
+        owner = self.find_succ(file_name_hash)
+
+        # I am owner
+        if owner.id == self.id:
+            self.database.remove_tag(file_name, tag, self.succ.ip)
+            return "OK,Data deleted"
+        # I am not owner
+        else:
+            response = owner.remove_tag(file_name, tag)
+            return response
+    ###########################################################################
 
         
     def request_data_handler(self, conn: socket, addr, data: list):
@@ -149,6 +235,19 @@ class DataNode(ChordNode):
 
         elif option == REMOVE_FILE:
             response = self._handle_remove_file(data[1:])
+
+
+        elif option == INSERT_FILE:
+            response = self._handle_insert_file(data[1:])
+            
+        elif option == DELETE_FILE:
+            response = self._handle_delete_file(data[1:])
+
+        elif option == APPEND_TAG:
+            response = self._handle_append_tag(data[1:])
+
+        elif option == REMOVE_TAG:
+            response = self._handle_remove_tag(data[1:])
 
         
         if response:

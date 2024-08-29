@@ -43,10 +43,16 @@ Succ     : ({succ_id[len(succ_id)-3: len(succ_id)]}) - {succ_id} - {succ_ip}
 Pred     : ({pred_id[len(pred_id)-3: len(pred_id)]}) - {pred_id} - {pred_ip}
 Leader   : {lead}
 
-Data       :
+------------------------ Owned -------------------------
+🔖 Tags:
 {self.format_data(self.node.database.tags)}
+📁 Files:
+{self.format_data(self.node.database.files)}
 
-Replicated :
+---------------------- Replicated ----------------------
+🔖 Tags:
 {self.format_data(self.node.database.replicated_tags)}
+📁 Files:
+{self.format_data(self.node.database.replicated_files)}
 """
                 file.write(log)

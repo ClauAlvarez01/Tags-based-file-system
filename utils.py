@@ -1,6 +1,6 @@
 import hashlib
 import socket
-from db_const import OK
+from const import OK
 
 # Function to hash a string using SHA-1 and return its integer representation
 def getShaRepr(data: str):
