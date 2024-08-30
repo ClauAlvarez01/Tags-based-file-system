@@ -129,6 +129,16 @@ class ChordNodeReference:
         response = self._send_data_data(REMOVE_TAG, f"{file_name},{tag}").decode()
         return response
 
+
+    def insert_bin(self, file_name: str, bin: bytes):
+        response = send_bin(f"{INSERT_BIN}", file_name, bin, self.ip, self.data_port, end_msg=True)
+        return response
+    
+    def delete_bin(self, file_name: str):
+        response = self._send_data_data(f"{DELETE_BIN}", file_name)
+        return response
+
+
     # ====================================================================
 
 

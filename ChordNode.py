@@ -97,7 +97,7 @@ class ChordNode:
     def stabilize(self):
         while True:
             if self.succ.id != self.id:
-                print('[*] Stabilizating...')
+                print('[⚖] Stabilizating...')
 
                 # Check successor is alve before stabilization
                 if self.succ.check_node():
@@ -113,11 +113,11 @@ class ChordNode:
                         
                         # Notify mi successor
                         self.succ.notify(self.ref)
-                        print('[*] end stabilize...')
+                        print('[⚖] end stabilize...')
                     else:
-                        print("[*] 🟢 already stable")
+                        print("[⚖] 🟢Already stable")
                 else:
-                    print("[*] I lost my successor, waiting for predecesor check...")
+                    print("[⚖] I lost my successor, waiting for predecesor check...")
 
             time.sleep(10)
 

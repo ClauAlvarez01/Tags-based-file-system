@@ -1,3 +1,4 @@
+import os
 import socket
 import threading
 import json
@@ -19,12 +20,71 @@ class Database:
         self.files: Dict[str, List[str]] = {}
         self.replicated_files: Dict[str, List[str]] = {}
 
+        # Paths
+        self.dir_path = f"database/{self.db_ip}"
+        self.tags_path = f"{self.dir_path}/tags.json"
+        self.files_path = f"{self.dir_path}/files.json"
+        self.bins_path = f"{self.dir_path}/bins"
+        self.replicated_bins_path = f"{self.dir_path}/replicated_bins"
+
+        # Load saved data
+        self.load_data()
+
         threading.Thread(target=self._recv, daemon=True).start()
+
+
+
+    def load_data(self):
+        print("[💾] Loading data...")
+
+        # Create all empty files if they dont exist
+        if not os.path.exists(self.dir_path):            
+            os.makedirs(self.dir_path)
+
+        if not os.path.isfile(self.tags_path):
+            with open(self.tags_path, 'w') as json_file:
+                json.dump(self.tags, json_file, indent=4)
+        
+        if not os.path.isfile(self.files_path):
+            with open(self.files_path, 'w') as json_file:
+                json.dump(self.files, json_file, indent=4)
+
+        if not os.path.exists(self.bins_path):
+            os.makedirs(self.bins_path)
+
+        if not os.path.exists(self.replicated_bins_path):
+            os.makedirs(self.replicated_bins_path)
+
+        
+        # Load data from files
+        with open(self.tags_path, 'r') as json_file:
+            stored_tags = json.load(json_file)
+            self.tags.update(stored_tags)
+
+        with open(self.files_path, 'r') as json_file:
+            stored_files = json.load(json_file)
+            self.files.update(stored_files)
+
+
+        print("[💾] Data loaded successfully")
+
+
+
+    ################################ Savers ###################################
+    def save_tags(self):
+        with open(self.tags_path, 'w') as json_file:
+            json.dump(self.tags, json_file, indent=4)
+    
+    def save_files(self):
+        with open(self.files_path, 'w') as json_file:
+            json.dump(self.files, json_file, indent=4)
+
 
 
     
 
-    ################################# TAGS ####################################
+    ################################# REQUEST FUNCTIONS ####################################
+    # TAGS
     def owns_tag(self, tag: str) -> bool:
         return tag in self.tags
     
@@ -33,33 +93,38 @@ class Database:
 
     def store_tag(self, tag: str, successor_ip: str):
         """Adds tag key to storage with empty list"""
-        self.tags[tag] = []                              # Store it
+        self.tags[tag] = []
         op = f"{REPLICATE_STORE_TAG}"
         msg = tag
         send_2(op, msg, successor_ip, self.db_port)      # Replicate it
+        self.save_tags()
 
     def append_file(self, tag: str, file_name: str, successor_ip: str):
         """Appends file name to given tag storage"""
-        self.tags[tag].append(file_name)                 # Store it
+        self.tags[tag].append(file_name)
         op = f"{REPLICATE_APPEND_FILE}"
         msg = f"{tag};{file_name}"
         send_2(op, msg, successor_ip, self.db_port)      # Replicate it
+        self.save_tags()
     
     def delete_tag(self, tag: str, successor_ip: str):
         """Deletes tag key from storage"""
-        del self.tags[tag]                               # Store it
+        del self.tags[tag]
         op = f"{REPLICATE_DELETE_TAG}"
         msg = tag
         send_2(op, msg, successor_ip, self.db_port)      # Replicate it
+        self.save_tags()
 
     def remove_file(self, tag: str, file_name: str, successor_ip: str):
         """Removes file name from given tag storage"""
-        self.tags[tag].remove(file_name)                 # Store it
+        self.tags[tag].remove(file_name)
         op = f"{REPLICATE_REMOVE_FILE}"
         msg = f"{tag};{file_name}"
         send_2(op, msg, successor_ip, self.db_port)      # Replicate it
+        self.save_tags()
 
-    ################################# FILES ####################################
+    ########################
+    # FILES
     def owns_file(self, file_name: str) -> bool:
         return file_name in self.files
     
@@ -68,36 +133,61 @@ class Database:
 
     def store_file(self, file_name: str, successor_ip: str):
         """Adds file name key to storage with empty list"""
-        self.files[file_name] = []                        # Store it
+        self.files[file_name] = []
         op = f"{REPLICATE_STORE_FILE}"
         msg = file_name
         send_2(op, msg, successor_ip, self.db_port)       # Replicate it
+        self.save_files()
 
     def append_tag(self, file_name: str, tag: str, successor_ip: str):
         """Appends tag to given file name storage"""
-        self.files[file_name].append(tag)                 # Store it
+        self.files[file_name].append(tag)
         op = f"{REPLICATE_APPEND_TAG}"
         msg = f"{file_name};{tag}"
         send_2(op, msg, successor_ip, self.db_port)       # Replicate it
+        self.save_files()
 
     def delete_file(self, file_name: str, successor_ip: str):
         """Deletes file name key from storage"""
-        del self.files[file_name]                         # Store it
+        del self.files[file_name]
         op = f"{REPLICATE_DELETE_FILE}"
         msg = file_name
         send_2(op, msg, successor_ip, self.db_port)       # Replicate it
+        self.save_files()
 
     def remove_tag(self, file_name: str, tag: str, successor_ip: str):
         """Removes tag from given file name storage"""
-        self.files[file_name].remove(tag)                 # Store it
+        self.files[file_name].remove(tag)
         op = f"{REPLICATE_REMOVE_TAG}"
         msg = f"{file_name};{tag}"
         send_2(op, msg, successor_ip, self.db_port)       # Replicate it
+        self.save_files()
     
+    #######################
+    # BINS
+    def store_bin(self, file_name: str, bin: bytes, successor_ip: str):
+        """Stores file content"""
+        file_path = f"{self.bins_path}/{file_name}"
+        with open(file_path, 'wb') as file:
+            file.write(bin)
+
+        op = f"{REPLICATE_STORE_BIN}"
+        send_bin(op, file_name, bin, successor_ip, self.db_port)    # Replicate it
+
+    def delete_bin(self, file_name: str, successor_ip: str):
+        """Deletes file content"""
+        file_path = f"{self.bins_path}/{file_name}"
+        os.remove(file_path)
+
+        op = f"{REPLICATE_DELETE_BIN}"
+        msg = file_name
+        send_2(op, msg, successor_ip, self.db_port)                 # Replicate it
+
+    ############################################################################################
 
 
 
-
+    ################################### REPLICATION FUNCS ######################################
     # Function to assume data from old failed owner
     def assume_data(self, successor_ip: str, new_predecessor_ip: str = None):
         print(f"[📥] Assuming predecesor data")
@@ -106,11 +196,34 @@ class Database:
         self.tags.update(self.replicated_tags)
         print(f"[📥] {len(self.replicated_tags.items())} tags assumed")
         self.replicated_tags = {}
+        self.save_tags()
+
+        # Assume replicated bins
+        for k, _ in self.replicated_files.items():
+            # Read bin
+            file_path = f"{self.replicated_bins_path}/{k}"
+            content = []
+            with open(file_path, 'rb') as file:
+                while True:
+                    data = file.read(1024)
+                    if not data:
+                        break
+                    content.append(data)
+                content = b''.join(content)
+
+            # Write bin
+            new_file_path = f"{self.bins_path}/{k}"
+            with open(new_file_path, 'wb') as file:
+                file.write(content)
+
+            # Delete replicated bin
+            os.remove(file_path)
 
         # Assume replicated files
         self.files.update(self.replicated_files)
         print(f"[📥] {len(self.replicated_files.items())} files assumed")
         self.replicated_files = {}
+        self.save_files()
 
         # Let successor know my data has changed
         self.send_fetch_notification(successor_ip)
@@ -126,7 +239,6 @@ class Database:
         i_t = 0
         i_f = 0
 
-        # Delgar datos
         new_owner_id = getShaRepr(new_owner_ip)
         my_id = getShaRepr(self.db_ip)
 
@@ -168,7 +280,10 @@ class Database:
             ack = s.recv(1024).decode()
             if ack != f"{OK}":
                 raise Exception("ACK negativo")
-
+            
+            # Send bins
+            send_bins(s, files_to_delegate, self.bins_path)
+            
             # Send ip
             s.sendall(f"{self.db_ip}".encode())
             s.close()
@@ -181,6 +296,12 @@ class Database:
             del self.tags[k]
         for k, v in files_to_delegate.items():
             del self.files[k]
+        for k, _ in files_to_delegate.items():
+            file_path = f"{self.bins_path}/{k}"
+            os.remove(file_path)
+
+        self.save_tags()
+        self.save_files()
 
         # Let know my successor i have new data
         self.send_fetch_notification(listener_ip)
@@ -191,6 +312,8 @@ class Database:
         print(f"I pull replication from {owner_ip}")
 
         # Delete current replicates
+        for k, _ in self.replicated_files.items():
+            os.remove(f"{self.replicated_bins_path}/{k}")
         self.replicated_tags = {}
         self.replicated_files = {}
         
@@ -211,17 +334,23 @@ class Database:
             files_json_str = s.recv(1024).decode()
             files_data = json.loads(files_json_str)
 
-            # Overwrite replicated tags
+            s.sendall(f"{OK}".encode())
+            
+            # Receive and write bins
+            recv_write_bins(s, self.replicated_bins_path)
+
+            # Overwrite replicated tags and files
             self.replicated_tags = tags_data
             self.replicated_files = files_data
 
             s.close()
-        
+    
 
     # Function to notify my replications listeners, that my data has changed
     def send_fetch_notification(self, target_ip: str):
         send_2(f"{FETCH_REPLICA}", self.db_ip, target_ip, self.db_port)
 
+    ########################################################################################
 
 
 
@@ -296,6 +425,24 @@ class Database:
             conn.sendall(f"{OK}".encode())
 
 
+        
+        elif data == f"{REPLICATE_STORE_BIN}":
+            conn.sendall(f"{OK}".encode())
+            file_name = conn.recv(1024).decode()
+            conn.sendall(f"{OK}".encode())
+            bin = conn.recv(1024)
+            with open(f"{self.replicated_bins_path}/{file_name}", 'wb') as file:
+                file.write(bin)
+            conn.sendall(f"{OK}".encode())
+
+        elif data == f"{REPLICATE_DELETE_BIN}":
+            conn.sendall(f"{OK}".encode())
+            file_name = conn.recv(1024).decode()
+            file_path = f"{self.replicated_bins_path}/{file_name}"
+            os.remove(file_path)
+            conn.sendall(f"{OK}".encode())
+
+
 
         elif data == f"{PUSH_DATA}":
             conn.sendall(f"{OK}".encode())
@@ -304,15 +451,22 @@ class Database:
             tags_json_str = conn.recv(1024).decode()
             new_tags = json.loads(tags_json_str)
             self.tags.update(new_tags)
+            self.save_tags()
 
             conn.sendall(f"{OK}".encode())
 
+            # Receive and update files
             files_json_str = conn.recv(1024).decode()
             new_files = json.loads(files_json_str)
             self.files.update(new_files)
+            self.save_files()
 
             conn.sendall(f"{OK}".encode())
 
+            # Receive and write bins
+            recv_write_bins(conn, self.bins_path)
+            
+            # Send IP
             ip = conn.recv(1024).decode()
 
             # Let my sucessor know i have new data
@@ -333,8 +487,15 @@ class Database:
             files_json_str = json.dumps(self.files)
             conn.sendall(files_json_str.encode())
 
+            ack = conn.recv(1024).decode()
+            if ack != f"{OK}":
+                raise Exception("ACK negativo")
+            
+            # Send bins
+            send_bins(conn, self.files, self.bins_path)
+    
 
-
+        # Pull data to replicate
         elif data == f"{FETCH_REPLICA}":
             conn.sendall(f"{OK}".encode())
 
@@ -343,8 +504,6 @@ class Database:
             self.pull_replication(ip)
 
             conn.sendall(f"{OK}".encode())
-
-
 
 
 

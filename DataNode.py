@@ -25,7 +25,7 @@ class DataNode(ChordNode):
         self.database = Database(ip)
 
         threading.Thread(target=self.start_data_server, daemon=True).start()
-        threading.Thread(target=self.temporal_insert, daemon=True).start()
+        # threading.Thread(target=self.temporal_insert, daemon=True).start()
         
 
     def temporal_insert(self):
@@ -59,21 +59,28 @@ class DataNode(ChordNode):
             response = self.ref.append_tag("file2", "azul").split(",")
             print(response)
 
-            time.sleep(60)
-            print("🔼 Insertando posteriormente un file con tags")
-            self.ref.insert_file("perro.png")
-            self.ref.insert_tag("manchado")
-            self.ref.insert_tag("peludo")
-            self.ref.insert_tag("pesao")
-            self.ref.append_file("manchado", "perro.png")
-            self.ref.append_file("peludo", "perro.png")
-            self.ref.append_file("pesao", "perro.png")
-            self.ref.append_tag("perro.png", "manchado")
-            self.ref.append_tag("perro.png", "peludo")
-            self.ref.append_tag("perro.png", "pesao")
 
-            self.ref.delete_file("file1")
-            self.ref.remove_file("rojo", "file1")
+
+            # print("🔼 Insertando un BIN")
+            # temp_file = []
+            # with open("prueba.txt", 'rb') as archivo:
+            #     while True:
+            #         datos = archivo.read(1024)
+            #         if not datos:
+            #             break
+            #         temp_file.append(datos)
+            # temp_file = b''.join(temp_file)
+
+            # response = self.ref.insert_bin("prueba.txt", temp_file)
+            # print(response)
+
+            # print("🔼 Borrando un BIN")
+            # time.sleep(10)
+            # response = self.ref.delete_bin("prueba.txt")
+            # print(response)
+
+
+
 
             
 
@@ -151,7 +158,7 @@ class DataNode(ChordNode):
         # I am owner
         if owner.id == self.id:
             self.database.remove_file(tag, file_name, self.succ.ip)
-            return "OK,Data deleted"
+            return "OK,Data removed"
         # I am not owner
         else:
             response = owner.remove_file(tag, file_name)
@@ -211,15 +218,43 @@ class DataNode(ChordNode):
         # I am owner
         if owner.id == self.id:
             self.database.remove_tag(file_name, tag, self.succ.ip)
-            return "OK,Data deleted"
+            return "OK,Data removed"
         # I am not owner
         else:
             response = owner.remove_tag(file_name, tag)
             return response
+        
+
+    def _handle_insert_bin(self, file_name: str, bin: bytes):
+        file_name_hash = getShaRepr(file_name)
+        owner = self.find_succ(file_name_hash)
+
+        # I am owner
+        if owner.id == self.id:
+            self.database.store_bin(file_name, bin, self.succ.ip)
+            return "OK,Binary file inserted"
+        # I am not owner
+        else:
+            response = owner.insert_bin(file_name, bin)
+            return response
+        
+    def _handle_delete_bin(self, file_name: str):
+        file_name_hash = getShaRepr(file_name)
+        owner = self.find_succ(file_name_hash)
+
+        # I am owner
+        if owner.id == self.id:
+            self.database.delete_bin(file_name, self.succ.ip)
+            return "OK,Binary file deleted"
+        # I am not owner
+        else:
+            response = owner.delete_bin(file_name)
+            return response
     ###########################################################################
 
         
-    def request_data_handler(self, conn: socket, addr, data: list):
+
+    def request_data_handler(self, conn: socket.socket, addr, data: list):
         response = None
         option = int(data[0])
 
@@ -237,6 +272,7 @@ class DataNode(ChordNode):
             response = self._handle_remove_file(data[1:])
 
 
+
         elif option == INSERT_FILE:
             response = self._handle_insert_file(data[1:])
             
@@ -249,9 +285,31 @@ class DataNode(ChordNode):
         elif option == REMOVE_TAG:
             response = self._handle_remove_tag(data[1:])
 
+
+
+        elif option == INSERT_BIN:
+            conn.sendall(f"{OK}".encode())
+            file_name = conn.recv(1024).decode()
+            conn.sendall(f"{OK}".encode())
+
+            bin = []
+            while True:
+                data = conn.recv(1024)
+                if data.decode() == f"{END_FILE}":
+                    break
+                bin.append(data)
+            bin = b''.join(bin)
+
+            response = self._handle_insert_bin(file_name, bin)
+            conn.sendall(response.encode())
+
+
+        elif option == DELETE_BIN:
+            response = self._handle_delete_bin(data[1])
+
+
         
         if response:
-            # format must be: "<op>,<data>""
             response = response.encode()
             conn.sendall(response)
         conn.close()
