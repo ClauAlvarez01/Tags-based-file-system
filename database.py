@@ -123,6 +123,13 @@ class Database:
         send_2(op, msg, successor_ip, self.db_port)      # Replicate it
         self.save_tags()
 
+    def retrieve_tag(self, tag: str) -> str:
+        """Retrieve list of files name associated with given tag"""
+        data = {}
+        value = self.tags[tag]
+        data["data"] = value
+        return json.dumps(data)
+    
     ########################
     # FILES
     def owns_file(self, file_name: str) -> bool:
@@ -162,6 +169,13 @@ class Database:
         msg = f"{file_name};{tag}"
         send_2(op, msg, successor_ip, self.db_port)       # Replicate it
         self.save_files()
+
+    def retrieve_file(self, file_name: str) -> str:
+        """Retrieve list of tags associated with given file name"""
+        data = {}
+        value = self.files[file_name]
+        data["data"] = value
+        return json.dumps(data)
     
     #######################
     # BINS

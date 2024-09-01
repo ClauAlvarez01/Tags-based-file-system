@@ -1,3 +1,4 @@
+import json
 import socket
 from const import *
 from utils import *
@@ -97,44 +98,74 @@ class ChordNodeReference:
     
 
     def insert_tag(self, tag: str) -> str:
+        """Inserts a tag in system, if tag already exists, throw no error (works from any node)"""
         response = self._send_data_data(INSERT_TAG, tag).decode()
         return response
 
     def delete_tag(self, tag: str) -> str:
+        """Deletes a tag from system, if tag does not exists, throw no error (works from any node)"""
         response = self._send_data_data(DELETE_TAG, tag).decode()
         return response
     
     def append_file(self, tag: str, file_name: str):
+        """Appends file name to tag (works from any node)"""
         response = self._send_data_data(APPEND_FILE, f"{tag},{file_name}").decode()
         return response
     
     def remove_file(self, tag: str, file_name: str):
+        """Removes file name from tag (works from any node)"""
         response = self._send_data_data(REMOVE_FILE, f"{tag},{file_name}").decode()
         return response
     
+    def retrieve_tag(self, tag: str) -> list[str]:
+        """Retrieves files list from given tag (only works from owner node)"""
+        json_str_data = self._send_data_data(RETRIEVE_TAG, tag).decode()
+        json_data = json.loads(json_str_data)
+        return json_data['data']
+    
+    
     
     def insert_file(self, file_name: str) -> str:
+        """Inserts a file name in system, if already exists, throw no error (works from any node)"""
         response = self._send_data_data(INSERT_FILE, file_name).decode()
         return response
 
     def delete_file(self, file_name: str) -> str:
+        """Deletes a file name from system, if does not exists, throw no error (works from any node)"""
         response = self._send_data_data(DELETE_FILE, file_name).decode()
         return response
     
     def append_tag(self, file_name: str, tag: str):
+        """Appends tag to file (works from any node)"""
         response = self._send_data_data(APPEND_TAG, f"{file_name},{tag}").decode()
         return response
     
     def remove_tag(self, file_name: str, tag: str):
+        """Removes tag from file (works from any node)"""
         response = self._send_data_data(REMOVE_TAG, f"{file_name},{tag}").decode()
         return response
 
+    def retrieve_file(self, file_name: str) -> list[str]:
+        """Retrieves tags list from given file name (only works from owner node)"""
+        json_str_data = self._send_data_data(RETRIEVE_FILE, file_name).decode()
+        json_data = json.loads(json_str_data)
+        return json_data['data']
+    
+    def owns_file(self, file_name: str):
+        """Returns '1' if node owns file name, else '0' (only works from owner node)"""
+        response = self._send_data_data(OWNS_FILE, file_name).decode()
+        return response == "1"
 
+
+
+    # Must be called from owner node
     def insert_bin(self, file_name: str, bin: bytes):
+        """Inserts binary file in system (works from any node)"""
         response = send_bin(f"{INSERT_BIN}", file_name, bin, self.ip, self.data_port, end_msg=True)
         return response
     
     def delete_bin(self, file_name: str):
+        """Deletes binary file from system (works from any node)"""
         response = self._send_data_data(f"{DELETE_BIN}", file_name)
         return response
 
