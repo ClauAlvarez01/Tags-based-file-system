@@ -17,6 +17,10 @@ Leader   : 172.17.0.2
 
 ---------------------- Replicated ----------------------
 🔖 Tags:
+	azul - ['file2']
+	rojo - ['file1']
 
 📁 Files:
+	file1 - ['rojo']
+	file2 - ['azul']
 

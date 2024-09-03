@@ -12,10 +12,10 @@ from self_discovery import SelfDiscovery
 
 
 class ChordNode:
-    def __init__(self, ip: str, port: int = DEFAULT_NODE_PORT, m: int = 3, update_replication = None):
+    def __init__(self, ip: str, m: int = 3, update_replication = None):
         self.ip = ip
         self.id = getShaRepr(ip)
-        self.chord_port = port
+        self.chord_port = DEFAULT_NODE_PORT
         self.ref: ChordNodeReference = ChordNodeReference(self.ip, self.chord_port)
         self.succ: ChordNodeReference = self.ref
         self.pred: ChordNodeReference = None

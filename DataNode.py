@@ -11,8 +11,8 @@ from self_discovery import SelfDiscovery
 from ChordNodeReference import ChordNodeReference
 
 class DataNode(ChordNode):
-    def __init__(self, ip: str, chord_port: int = DEFAULT_NODE_PORT, data_port = DEFAULT_DATA_PORT, m: int = 3):
-        super().__init__(ip, chord_port, m, self.update_replication)
+    def __init__(self, ip: str):
+        super().__init__(ip, update_replication=self.update_replication)
         self.logger = Logger(self)
         # self.ip
         # self.id
@@ -21,7 +21,7 @@ class DataNode(ChordNode):
         # self.succ
         # self.pred
         # self.m
-        self.data_port = data_port
+        self.data_port = DEFAULT_DATA_PORT
         self.database = Database(ip)
 
         threading.Thread(target=self.start_data_server, daemon=True).start()
@@ -88,6 +88,8 @@ class DataNode(ChordNode):
             owner = self.find_succ(tag_hash)
             files_list = owner.retrieve_tag(tag)
             all_files_list.append(files_list)
+
+        if all_files_list == []: return []
 
         # Intersect all lists
         intersection = list(set.intersection(*map(set, all_files_list)))
