@@ -27,12 +27,7 @@ class QueryNode(DataNode):
     #         self._query_add(["archivo1"], [b'Contenido de archivo1'], ['azul'])
 
 
-
-
-
-    # poner esta funcion en un hilo pq se va a quedar parada esperando repuesta hasta q se complete
-    def _query_add(self, files_names: list[str], files_bins: list[bytes], tags: list[str]):
-
+    def _request_with_permission(self, callback):
         leader_ip = self.election.get_leader()
         leader_port = DEFAULT_LEADER_PORT
 
@@ -48,14 +43,28 @@ class QueryNode(DataNode):
             if permission != f"{OK}":
                 raise Exception(f"No permision was send, leader sent: {permission}")
             
-            # Copy every file into system
+            # Invoke callback function
+            callback()
+
+            # Send END of operation
+            s.sendall(f"{END}".encode())
+            
+
+
+    # poner esta funcion en un hilo pq se va a quedar parada esperando repuesta hasta q se complete
+    def _query_add(self, files_names: list[str], files_bins: list[bytes], tags: list[str]):
+        
+        # Copy every file into system
+        def callback_func():
             for i in range(len(files_names)):
                 file_name = files_names[i]
                 file_bin = files_bins[i]
                 self.copy(file_name, file_bin, tags)
 
-            # Send END of operation
-            s.sendall(f"{END}".encode())
+        self._request_with_permission(callback=callback_func)
+
+
+
             
 
     def _query_delete(self, query_tags: list[str]): 
