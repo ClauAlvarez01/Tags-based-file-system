@@ -27,7 +27,7 @@ class QueryNode(DataNode):
     #         self._query_add(["archivo1"], [b'Contenido de archivo1'], ['azul'])
 
 
-    def _request_with_permission(self, callback):
+    def _request_with_permission(self, tags, files_names, query_tags, callback):
         leader_ip = self.election.get_leader()
         leader_port = DEFAULT_LEADER_PORT
 
@@ -35,7 +35,7 @@ class QueryNode(DataNode):
             s.connect((leader_ip, leader_port))
             
             # Send data
-            packed_permission_request = self._pack_permission_request(tags, files_names, [])
+            packed_permission_request = self._pack_permission_request(tags, files_names, query_tags)
             s.sendall(packed_permission_request)
 
             # Wait permission
@@ -53,31 +53,109 @@ class QueryNode(DataNode):
 
     # poner esta funcion en un hilo pq se va a quedar parada esperando repuesta hasta q se complete
     def _query_add(self, files_names: list[str], files_bins: list[bytes], tags: list[str]):
-        
-        # Copy every file into system
+        # ['failed']: A list of files name that failed to insert
+        # ['msg']: A response message
+        response: dict = {}
+        response['failed'] = []
+        response['msg'] = "Operation completed, but some insertions failed"
+
         def callback_func():
+            # Copy every file into system
             for i in range(len(files_names)):
                 file_name = files_names[i]
                 file_bin = files_bins[i]
-                self.copy(file_name, file_bin, tags)
+                success = self.copy(file_name, file_bin, tags)
+                if not success:
+                    response['failed'].append(file_name)
+        
+        if len(response['failed']) == 0: response['msg'] = "All insertions completed successfully"
 
-        self._request_with_permission(callback=callback_func)
+        self._request_with_permission(tags, files_names, [], callback=callback_func)
+        return response
 
-
-
-            
 
     def _query_delete(self, query_tags: list[str]): 
-        pass
+        # ['failed']: A list of files name that failed to delete
+        # ['msg']: A response message
+        response: dict = {}
+        response['failed'] = []
+        response['msg'] = "Operation completed, but some deletions failed"
+
+        def callback_func():
+            files_to_delete = self.tag_query(query_tags)
+            for file in files_to_delete:
+                success = self.remove(file)
+                if not success:
+                    response['failed'].append(file)
+
+        if len(response['failed']) == 0: response['msg'] = "All deletions completed successfully"
+
+        self._request_with_permission([], [], query_tags, callback=callback_func)
+        return response
+
 
     def _query_list(self, query_tags: list[str]):
-        pass
+        # ['files_name']: A list of files name retrieved from query tags
+        # ['tags']: A list of elements, where each element is list of associated tags to file name in the same index
+        # ['msg']: A response message
+        response: dict = {}
+        response['files_name'] = []
+        response['tags'] = []
+
+        def callback_func():
+            files_to_list = self.tag_query(query_tags)
+            for file in files_to_list:
+                tags = self.inspect(file)
+                response['files_name'].append(file)
+                response['tags'].append(tags)
+
+        response['msg'] = f"{len(response['files_name'])} files retrieved"
+
+        self._request_with_permission([], [], query_tags, callback=callback_func)
+        return response
+
 
     def _query_add_tags(self, query_tags: list[str], tags: list[str]):
-        pass
+        # ['failed']: A list of files name that failed to be edited with tags
+        # ['msg']: A response message
+        response: dict = {}
+        response['failed'] = []
+        response['msg'] = "Operation completed, but some files failed to add tags"
+
+        def callback_func():
+            files_to_edit = self.tag_query(query_tags)
+            for file in files_to_edit:
+                success = self.add_tags(file, tags)
+                if not success:
+                    response['failed'].append(file)
+
+        if len(response['failed']) == 0: response['msg'] = "All tags added successfully"
+
+        self._request_with_permission(tags, [], query_tags, callback=callback_func)
+        return response
+
 
     def _query_delete_tags(self, query_tags: list[str], tags: list[str]):
-        pass
+        # ['failed']: A list of files name that failed to be edited with tags
+        # ['msg']: A response message
+        response: dict = {}
+        response['failed'] = []
+        response['msg'] = "Operation completed, but some files failed to delete tags"
+
+        def callback_func():
+            files_to_edit = self.tag_query(query_tags)
+            for file in files_to_edit:
+                success = self.delete_tags(file, tags)
+                if not success:
+                    response['failed'].append(file)
+
+        if len(response['failed']) == 0: response['msg'] = "All tags deleted successfully"
+
+        self._request_with_permission(tags, [], query_tags, callback=callback_func)
+        return response
+
+
+
 
 
     # Server
