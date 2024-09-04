@@ -166,7 +166,8 @@ class QueryNode(DataNode):
         self._request_with_permission(tags, [], query_tags, callback=callback_func)
         return response
 
-
+    def _query_download(self, query_tags: list[str]):
+        pass
 
 
 
