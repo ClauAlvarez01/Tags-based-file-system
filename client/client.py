@@ -1,3 +1,4 @@
+import json
 import os
 import socket
 import threading
@@ -134,8 +135,9 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 
                     # Wait response
                     response = s.recv(1024).decode()
+                    response = json.loads(response)
                     s.close()
-                    print(response)
+                    self.show_results(response)
 
 
 
@@ -161,8 +163,9 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 
                     # Wait response
                     response = s.recv(1024).decode()
+                    response = json.loads(response)
                     s.close()
-                    print(response)
+                    self.show_results(response)
 
             
             elif cmd == "list":
@@ -187,8 +190,9 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 
                     # Wait response
                     response = s.recv(1024).decode()
+                    response = json.loads(response)
                     s.close()
-                    print(response)
+                    self.show_list(response)
 
 
             elif cmd == "add-tags":
@@ -221,8 +225,9 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 
                     # Wait response
                     response = s.recv(1024).decode()
+                    response = json.loads(response)
                     s.close()
-                    print(response)
+                    self.show_results(response)
 
 
             elif cmd == "delete-tags":
@@ -255,8 +260,9 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 
                     # Wait response
                     response = s.recv(1024).decode()
+                    response = json.loads(response)
                     s.close()
-                    print(response)
+                    self.show_results(response)
 
             else:
                 self.display_error("Command not found")
@@ -265,6 +271,28 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
             print("")
 
 
+    def show_list(self, data: dict):
+        msg: str = data['msg']
+        files_name: list = data['files_name']
+        tags: list[list] = data['tags']
+        
+        print(msg)
+        for i in range(len(files_name)):
+            print(f"{bcolors.HEADER}{files_name[i]}{bcolors.ENDC} : {tags[i]}")
+
+    def show_results(self, data: dict):
+        msg: str = data['msg']
+        failed: list[str] = data['failed']
+        failed_msg: list[list] = data['failed_msg']
+        succeded: list[str] = data['succeded']
+
+        print(msg)
+
+        for i in range(len(succeded)):
+            print(f"{bcolors.OKGREEN}{succeded[i]}{bcolors.ENDC}")
+
+        for i in range(len(failed)):
+            print(f"{bcolors.FAIL}{failed[i]}{bcolors.ENDC} \n  Reason: {failed_msg[i]}")
 
 
 
