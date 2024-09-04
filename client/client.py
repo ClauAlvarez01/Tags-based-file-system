@@ -64,10 +64,13 @@ class Client:
 => {bcolors.OKBLUE}list          {bcolors.ENDC}<tag-query>              <=
 => {bcolors.OKBLUE}add-tags      {bcolors.ENDC}<tag-query>  <tag-list>  <=
 => {bcolors.OKBLUE}delete-tags   {bcolors.ENDC}<tag-query>  <tag-list>  <=
+=> {bcolors.OKBLUE}info          {bcolors.ENDC}                         <=
 => {bcolors.OKBLUE}exit          {bcolors.ENDC}                         <=
-============================================{bcolors.WARNING}
-⚠ Use (;) separator for lists of elements
+============================================
+{bcolors.WARNING}⚠ Use (;) separator for lists of elements
 example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
+{bcolors.WARNING}⚠ {bcolors.OKGREEN} green text {bcolors.WARNING}means succeded
+{bcolors.WARNING}⚠ {bcolors.FAIL} red text   {bcolors.WARNING}means failed
 {bcolors.ENDC}============================================"""
         print(info)
         
@@ -79,7 +82,9 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
             user_input = [x for x in user_input if x != ""]
 
             if len(user_input) == 1 and user_input[0] == "exit": break
-
+            if len(user_input) == 1 and user_input[0] == "info":
+                print(info)
+                continue
 
             cmd = user_input[0]
             params = user_input[1:]
