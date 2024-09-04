@@ -102,7 +102,7 @@ class DataNode(ChordNode):
 
         # Check already exist file error
         if file_owner.owns_file(file_name):
-            return False
+            return False, f"A file named {file_name} already exists in the system"
 
         # Copy binary file
         file_owner.insert_bin(file_name, bin)
@@ -117,7 +117,7 @@ class DataNode(ChordNode):
             self.handle_insert_tag(tag)
             self.handle_append_file(tag, file_name)
 
-        return True
+        return True, ""
     
     def remove(self, file_name: str) -> bool:
         """Remove a file from system, returns False if value does not exists"""
@@ -126,7 +126,7 @@ class DataNode(ChordNode):
 
         # Check does not exist file error
         if not file_owner.owns_file(file_name):
-            return False
+            return False, f"No file named {file_name} in the system"
         
         # Delete binary file
         file_owner.delete_bin(file_name)
@@ -139,7 +139,7 @@ class DataNode(ChordNode):
         # Delete file name and associated tags
         self.handle_delete_file(file_name)
 
-        return True
+        return True, ""
 
     def inspect(self, file_name: str) -> list[str]:
         """Returns the list of tags associated to given file name"""
@@ -154,6 +154,11 @@ class DataNode(ChordNode):
         file_name_hash = getShaRepr(file_name)
         file_owner = self.find_succ(file_name_hash)
 
+        current_file_tags = self.inspect(file_name)
+        for tag in tags:
+            if tag in current_file_tags:
+                return False, f"tag ({tag}) already exists in this file"
+
         for tag in tags:
             # Add file name to tags
             self.handle_insert_tag(tag)
@@ -162,15 +167,19 @@ class DataNode(ChordNode):
             # Add tags to file tags list
             file_owner.append_tag(file_name, tag)
         
-        return True
+        return True, ""
 
     def delete_tags(self, file_name: str, tags: list[str]):
         file_name_hash = getShaRepr(file_name)
         file_owner = self.find_succ(file_name_hash)
 
         current_file_tags = self.inspect(file_name)
+        for tag in tags:
+            if tag not in current_file_tags:
+                return False, f"tag ({tag}) not found"
+
         if len(current_file_tags) == len(tags):
-            return False
+            return False, "file cannot have 0 tags"
 
         for tag in tags:
             # Remove file name from tag
@@ -179,7 +188,7 @@ class DataNode(ChordNode):
             # Remove tag from file tags list
             file_owner.remove_tag(file_name, tag)
 
-        return True
+        return True, ""
     ######################################################################################
 
 
