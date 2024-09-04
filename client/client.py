@@ -32,7 +32,6 @@ class Client:
 
     def display_error(self, msg: str):
         print(bcolors.FAIL + msg + bcolors.ENDC)
-        input("press ENTER key to continue...")
 
     def load_bins(self, names: list[str]) -> tuple[list[bytes], bool]:
         bins: list[bytes] = []
@@ -58,8 +57,7 @@ class Client:
 
 
     def start(self):
-        while True:
-            info = f"""=COMMANDS===================================
+        info = f"""=COMMANDS===================================
 => {bcolors.OKBLUE}add           {bcolors.ENDC}<file-list>  <tag-list>  <=
 => {bcolors.OKBLUE}delete        {bcolors.ENDC}<tag-query>              <=
 => {bcolors.OKBLUE}list          {bcolors.ENDC}<tag-query>              <=
@@ -70,8 +68,10 @@ class Client:
 ⚠ Use (;) separator for lists of elements
 example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 {bcolors.ENDC}============================================"""
-            os.system('cls')
-            print(info)
+        print(info)
+        
+
+        while True:
             user_input = input(bcolors.OKBLUE + "> " + bcolors.ENDC)
 
             user_input = user_input.split(" ")
@@ -262,8 +262,7 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                 self.display_error("Command not found")
                 continue
 
-            input("press ENTER key to continue...")
-
+            print("")
 
 
 
