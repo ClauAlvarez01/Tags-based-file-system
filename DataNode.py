@@ -168,6 +168,10 @@ class DataNode(ChordNode):
         file_name_hash = getShaRepr(file_name)
         file_owner = self.find_succ(file_name_hash)
 
+        current_file_tags = self.inspect(file_name)
+        if len(current_file_tags) == len(tags):
+            return False
+
         for tag in tags:
             # Remove file name from tag
             self.handle_remove_file(tag, file_name)

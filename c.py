@@ -136,7 +136,7 @@ class QueryNode(DataNode):
         # ['msg']: A response message
         response: dict = {}
         response['failed'] = []
-        response['msg'] = "Operation completed, but some files failed to delete tags"
+        response['msg'] = ""
 
         def callback_func():
             files_to_edit = self.tag_query(query_tags)
@@ -146,7 +146,12 @@ class QueryNode(DataNode):
                     response['failed'].append(file)
 
         self._request_with_permission(tags, [], query_tags, callback=callback_func)
-        if len(response['failed']) == 0: response['msg'] = "All tags deleted successfully"
+
+        if len(response['failed']) == 0: 
+            response['msg'] = "All tags deleted successfully"
+        else:
+            response['msg'] = "Some tags were deleted successfully. \nDeletions failed because a file cannot have 0 tags"
+
         return response
 
 
