@@ -162,11 +162,96 @@ class QueryNode(DataNode):
     def start_query_server(self):
         # Iniciar aqui el servidor, q debe escuchar las consultas del cliente
         # en dependencia de la consulta, llamar a la funcion de arriba encargada
-        pass
+        
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind((self.ip, DEFAULT_QUERY_PORT))
+            s.listen(1)
+            print(f"Server listening on {self.ip}:{DEFAULT_QUERY_PORT}")
+
+            while True:
+                client_socket, client_address = s.accept()
+                with client_socket:
+                    print(f"Connected by {client_address}")
+                    
+                    # Recibir la operación solicitada por el cliente
+                    operation = client_socket.recv(1024).decode()
+
+                    # Enviar ACK si se reconoce la operación
+                    if operation in {'add', 'delete', 'list', 'add-tags', 'delete-tags'}:
+                        client_socket.sendall(f"{OK}".encode())
+                    else:
+                        client_socket.sendall(f"Unrecognized operation: {operation}".encode())
+                        continue
+                    
+                    response = {}
+
+                    if operation == 'add':
+                        files_names = []
+                        files_bins = []
+
+                        while True:
+                            file_name = client_socket.recv(1024).decode()
+                            if file_name == f"{END}":
+                                break
+                            
+                            # Enviar ACK por el nombre del archivo recibido
+                            client_socket.sendall(f"{OK}".encode())
+
+                            file_bin = b''
+                            while True:
+                                fragment = client_socket.recv(1024)
+                                if fragment.decode() == f"{END_FILE}":
+                                    break
+                                else:
+                                    file_bin += fragment
+                            
+                            # Enviar ACK por el contenido del archivo recibido
+                            client_socket.sendall(f"{OK}".encode())
+
+                            files_names.append(file_name)
+                            files_bins.append(file_bin)
+
+                        client_socket.sendall(f"{OK}".encode())
+
+                        tags = client_socket.recv(1024).decode().split(';')
+
+                        response = self._query_add(files_names, files_bins, tags)
+
+
+                    elif operation == 'delete':
+                        query_tags = client_socket.recv(1024).decode().split(';')
+                        response = self._query_delete(query_tags)
+                    
+
+                    elif operation == 'list':
+                        query_tags = client_socket.recv(1024).decode().split(';')
+                        response = self._query_list(query_tags)
+
+
+                    elif operation == 'add-tags':
+                        query_tags = client_socket.recv(1024).decode().split(';')
+                        client_socket.sendall(f"{OK}".encode())
+
+                        tags = client_socket.recv(1024).decode().split(';')
+
+                        response = self._query_add_tags(query_tags, tags)
+
+
+                    elif operation == 'delete-tags':
+                        query_tags = client_socket.recv(1024).decode().split(';')
+                        client_socket.sendall(f"{OK}".encode())
+
+                        tags = client_socket.recv(1024).decode().split(';')
+
+                        response = self._query_delete_tags(query_tags, tags)
+                    
+                    
+                    response_str = json.dumps(response)
+                    client_socket.sendall(str(response_str).encode())
 
 
 
-    
 
     def _pack_permission_request(self, tags: list[str], files_names: list[str], query_tags: list[str]) -> bytes:
         data = {}
