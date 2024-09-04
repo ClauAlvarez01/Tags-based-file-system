@@ -68,9 +68,8 @@ class QueryNode(DataNode):
                 if not success:
                     response['failed'].append(file_name)
         
-        if len(response['failed']) == 0: response['msg'] = "All insertions completed successfully"
-
         self._request_with_permission(tags, files_names, [], callback=callback_func)
+        if len(response['failed']) == 0: response['msg'] = "All insertions completed successfully"
         return response
 
 
@@ -88,9 +87,8 @@ class QueryNode(DataNode):
                 if not success:
                     response['failed'].append(file)
 
-        if len(response['failed']) == 0: response['msg'] = "All deletions completed successfully"
-
         self._request_with_permission([], [], query_tags, callback=callback_func)
+        if len(response['failed']) == 0: response['msg'] = "All deletions completed successfully"
         return response
 
 
@@ -109,9 +107,8 @@ class QueryNode(DataNode):
                 response['files_name'].append(file)
                 response['tags'].append(tags)
 
-        response['msg'] = f"{len(response['files_name'])} files retrieved"
-
         self._request_with_permission([], [], query_tags, callback=callback_func)
+        response['msg'] = f"{len(response['files_name'])} files retrieved"
         return response
 
 
@@ -129,9 +126,8 @@ class QueryNode(DataNode):
                 if not success:
                     response['failed'].append(file)
 
-        if len(response['failed']) == 0: response['msg'] = "All tags added successfully"
-
         self._request_with_permission(tags, [], query_tags, callback=callback_func)
+        if len(response['failed']) == 0: response['msg'] = "All tags added successfully"
         return response
 
 
@@ -149,9 +145,8 @@ class QueryNode(DataNode):
                 if not success:
                     response['failed'].append(file)
 
-        if len(response['failed']) == 0: response['msg'] = "All tags deleted successfully"
-
         self._request_with_permission(tags, [], query_tags, callback=callback_func)
+        if len(response['failed']) == 0: response['msg'] = "All tags deleted successfully"
         return response
 
 

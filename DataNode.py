@@ -156,6 +156,7 @@ class DataNode(ChordNode):
 
         for tag in tags:
             # Add file name to tags
+            self.handle_insert_tag(tag)
             self.handle_append_file(tag, file_name)
 
             # Add tags to file tags list
@@ -346,10 +347,8 @@ class DataNode(ChordNode):
             return response
         
     def handle_retrieve_tag(self, tag: str):
-        if self.database.contains_tag(tag):
-            return self.database.retrieve_tag(tag)
-        else:
-            raise Exception("ERROR,Tag does not exists")
+        return self.database.retrieve_tag(tag)
+        
         
 
     def handle_insert_file(self, file_name: str):
@@ -408,10 +407,7 @@ class DataNode(ChordNode):
             return response
 
     def handle_retrieve_file(self, file_name: str):
-        if self.database.contains_file(file_name):
-            return self.database.retrieve_file(file_name)
-        else:
-            raise Exception("ERROR,File name does not exists")
+        return self.database.retrieve_file(file_name)
         
 
     def handle_insert_bin(self, file_name: str, bin: bytes):

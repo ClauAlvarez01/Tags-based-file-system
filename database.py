@@ -144,6 +144,8 @@ class Database:
     def remove_file(self, tag: str, file_name: str, successor_ip: str):
         """Removes file name from given tag storage"""
         self.tags[tag].remove(file_name)
+        if len(self.tags[tag]) == 0:
+            del self.tags[tag]
         op = f"{REPLICATE_REMOVE_FILE}"
         msg = f"{tag};{file_name}"
         send_2(op, msg, successor_ip, self.db_port)      # Replicate it
@@ -152,8 +154,11 @@ class Database:
     def retrieve_tag(self, tag: str) -> str:
         """Retrieve list of files name associated with given tag"""
         data = {}
-        value = self.tags[tag]
-        data["data"] = value
+        if tag in self.tags:
+            value = self.tags[tag]
+            data["data"] = value
+        else:
+            data["data"] = []
         return json.dumps(data)
     
     ########################
@@ -199,8 +204,11 @@ class Database:
     def retrieve_file(self, file_name: str) -> str:
         """Retrieve list of tags associated with given file name"""
         data = {}
-        value = self.files[file_name]
-        data["data"] = value
+        if file_name in self.files:
+            value = self.files[file_name]
+            data["data"] = value
+        else:
+            data["data"] = []
         return json.dumps(data)
     
     #######################
@@ -442,6 +450,8 @@ class Database:
             data = conn.recv(1024).decode().split(';')
             tag, file_name = data[0], data[1]
             self.replicated_tags[tag].remove(file_name)
+            if len(self.replicated_tags[tag]) == 0:
+                del self.replicated_tags[tag]
             conn.sendall(f"{OK}".encode())
             self.save_replicated_tags()
 
