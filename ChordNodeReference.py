@@ -169,6 +169,22 @@ class ChordNodeReference:
         response = self._send_data_data(f"{DELETE_BIN}", file_name)
         return response
 
+    def retrieve_bin(self, file_name: str):
+        """Retrieves file binary content"""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((self.ip, self.data_port))
+
+            s.sendall(f"{RETRIEVE_BIN},{file_name}".encode('utf-8'))
+
+            file_bin = b''
+            while True:
+                fragment = s.recv(1024)
+                if fragment.decode() == f"{END_FILE}":
+                    break
+                else:
+                    file_bin += fragment
+            
+            return file_bin
 
     # ====================================================================
 

@@ -189,6 +189,14 @@ class DataNode(ChordNode):
             file_owner.remove_tag(file_name, tag)
 
         return True, ""
+    
+    def download(self, file_name: str) -> bytes:
+        """Returns the binary content of given file name"""
+        file_name_hash = getShaRepr(file_name)
+        file_owner = self.find_succ(file_name_hash)
+
+        bin = file_owner.retrieve_bin(file_name)
+        return bin
     ######################################################################################
 
 
@@ -277,6 +285,14 @@ class DataNode(ChordNode):
 
         elif option == DELETE_BIN:
             response = self.handle_delete_bin(data[1])
+
+
+        elif option == RETRIEVE_BIN:
+            file_name = data[1]
+            file_bin = self.database.retrieve_bin(file_name)
+
+            conn.sendall(file_bin)
+            conn.sendall(f"{END_FILE}")
 
 
         

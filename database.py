@@ -231,6 +231,20 @@ class Database:
         msg = file_name
         send_2(op, msg, successor_ip, self.db_port)                 # Replicate it
 
+    def retrieve_bin(self, file_name: str) -> bytes:
+        file_path = f"{self.bins_path}/{file_name}"
+        
+        content = []
+        with open(file_path, 'rb') as file:
+            while True:
+                fragment = file.read(1024)
+                if not fragment:
+                    break
+                content.append(fragment)
+            bin = b''.join(content)
+
+        return bin
+    
     ############################################################################################
 
 
