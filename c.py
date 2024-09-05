@@ -166,6 +166,7 @@ class QueryNode(DataNode):
         self._request_with_permission(tags, [], query_tags, callback=callback_func)
         return response
 
+
     def _query_download(self, query_tags: list[str]):
         pass
 
@@ -193,7 +194,7 @@ class QueryNode(DataNode):
             operation = client_socket.recv(1024).decode()
 
             # Send ACK if operation is correct
-            if operation in {'add', 'delete', 'list', 'add-tags', 'delete-tags'}:
+            if operation in {'add', 'delete', 'list', 'add-tags', 'delete-tags', 'download'}:
                 client_socket.sendall(f"{OK}".encode())
             else:
                 client_socket.sendall(f"Unrecognized operation: {operation}".encode())
@@ -261,7 +262,34 @@ class QueryNode(DataNode):
 
                 response = self._query_delete_tags(query_tags, tags)
             
-            
+
+            elif operation == 'download':
+                query_tags = client_socket.recv(1024).decode().split(';')
+                response = self._query_download(query_tags)
+                file_names = response['file_names']
+                file_bins = response['bins']
+
+                for i in range(len(file_names)):
+                    client_socket.sendall(file_names[i].encode())
+
+                    ack = client_socket.recv(1024).decode()
+                    if ack != f"{OK}": raise Exception("Negative ACK")
+
+                    client_socket.sendall(file_bins[i])
+                    client_socket.sendall(f"{END_FILE}".encode())
+
+                    ack = client_socket.recv(1024).decode()
+                    if ack != f"{OK}": raise Exception("Negative ACK")
+
+                client_socket.sendall(f"{END}".encode())
+
+                # Wait for OK
+                ack = client_socket.recv(1024).decode()
+                if ack != f"{OK}": raise Exception("Negative ACK")
+                
+                return
+
+
             response_str = json.dumps(response)
             client_socket.sendall(str(response_str).encode())
 
