@@ -84,6 +84,10 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
             user_input = user_input.split(" ")
             user_input = [x for x in user_input if x != ""]
 
+            if len(user_input) == 0:
+                self.display_error("Error: Empty input")
+                continue
+
             if len(user_input) == 1 and user_input[0] == "exit": break
             if len(user_input) == 1 and user_input[0] == "info":
                 print(info)
@@ -304,10 +308,11 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         s.sendall(f"{OK}".encode())
 
                         file_content = b''
+                        end_file = f"{END_FILE}".encode()
                         while True:
                             fragment = s.recv(1024)
-                            print(fragment)
-                            if fragment.decode() == f"{END_FILE}":
+                            if end_file in fragment:
+                                file_content += fragment.split(end_file)[0]
                                 break
                             else:
                                 file_content += fragment

@@ -176,7 +176,7 @@ class DataNode(ChordNode):
         current_file_tags = self.inspect(file_name)
         for tag in tags:
             if tag not in current_file_tags:
-                return False, f"tag ({tag}) not found"
+                return False, f"tag ({tag}) is not associated to this file"
 
         if len(current_file_tags) == len(tags):
             return False, "file cannot have 0 tags"
@@ -271,13 +271,14 @@ class DataNode(ChordNode):
             file_name = conn.recv(1024).decode()
             conn.sendall(f"{OK}".encode())
 
-            bin = []
+            bin = b''
+            end_file = f"{END_FILE}".encode()
             while True:
-                data = conn.recv(1024)
-                if data.decode() == f"{END_FILE}":
+                fragment = conn.recv(1024)
+                if end_file in fragment:
+                    bin += fragment.split(end_file)[0]
                     break
-                bin.append(data)
-            bin = b''.join(bin)
+                bin += fragment
 
             response = self.handle_insert_bin(file_name, bin)
             conn.sendall(response.encode())

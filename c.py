@@ -227,9 +227,11 @@ class QueryNode(DataNode):
                     client_socket.sendall(f"{OK}".encode())
 
                     file_bin = b''
+                    end_file = f"{END_FILE}".encode()
                     while True:
                         fragment = client_socket.recv(1024)
-                        if fragment.decode() == f"{END_FILE}":
+                        if end_file in fragment:
+                            file_bin += fragment.split(end_file)[0]
                             break
                         else:
                             file_bin += fragment
