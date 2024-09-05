@@ -64,6 +64,7 @@ class Client:
 => {bcolors.OKBLUE}list          {bcolors.ENDC}<tag-query>              <=
 => {bcolors.OKBLUE}add-tags      {bcolors.ENDC}<tag-query>  <tag-list>  <=
 => {bcolors.OKBLUE}delete-tags   {bcolors.ENDC}<tag-query>  <tag-list>  <=
+=> {bcolors.OKBLUE}download      {bcolors.ENDC}<tag-query>              <=
 => {bcolors.OKBLUE}info          {bcolors.ENDC}                         <=
 => {bcolors.OKBLUE}exit          {bcolors.ENDC}                         <=
 ============================================
@@ -269,6 +270,54 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                     s.close()
                     self.show_results(response)
 
+
+            elif cmd == 'download':
+                if len(params) != 1: 
+                    self.display_error(f"'download' command require 1 param but {len(params)} were given")
+                    continue
+
+                tags_query = params[0]
+                
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.connect((self.target_ip, self.target_port))
+
+                    # Send operation
+                    s.sendall('download'.encode())
+
+                    # Wait for OK
+                    ack = s.recv(1024).decode()
+                    if ack != f"{OK}": raise Exception("Negative ACK")
+
+                    # Send query tags
+                    s.sendall(tags_query.encode())
+
+                    # Wait response
+                    while True:
+                        file_name = s.recv(1024).decode()
+                        if file_name == f"{END}":
+                            break
+                    
+                        # Send file name received ACK
+                        s.sendall(f"{OK}".encode())
+
+                        file_content = ''
+                        while True:
+                            fragment = s.recv(1024).decode()
+                            if fragment == f"{END_FILE}":
+                                break
+                            else:
+                                file_content += fragment
+                    
+                        # Send file bin received ACK
+                        s.sendall(f"{OK}".encode())
+
+                        #Guardar archivos en txt 
+                        self.save_file(file_name, file_content)
+
+                    s.sendall(f"{OK}".encode())
+                    s.close()
+
+
             else:
                 self.display_error("Command not found")
                 continue
@@ -300,6 +349,13 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
             print(f"{bcolors.FAIL}{failed[i]}{bcolors.ENDC} \n  Reason: {failed_msg[i]}")
 
 
+    def save_file(file_name: str, content: str):
+        downloads_folder = os.path.join(os.path.dirname(__file__), 'downloads')
+        
+        file_path = os.path.join(downloads_folder, file_name)
+        
+        with open(file_path, 'w') as file:
+            file.write(content)
 
 
 if __name__ == "__main__":
