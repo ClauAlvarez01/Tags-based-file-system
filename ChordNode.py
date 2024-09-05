@@ -81,8 +81,6 @@ class ChordNode:
             self.succ = node.find_successor(self.id)
             self.election.adopt_leader(node.get_leader())
 
-            print(f"[-] seteo de sucessor a {self.succ}")
-
             # Second node joins to chord ring
             if self.succ.succ.id == self.succ.id:
                 self.pred = self.succ
@@ -91,6 +89,8 @@ class ChordNode:
         else:
             self.succ = self.ref
             self.pred = None
+            self.election.adopt_leader(self.ip)
+
         print("[*] end join")
 
     # Stabilize method to periodically verify and update the successor and predecessor
@@ -184,15 +184,6 @@ class ChordNode:
 
             time.sleep(10)
             pass
-
-    # Store key method to store a key-value pair and replicate to the successor
-    def store_key(self, key: str, value: str):
-        pass
-
-    # Retrieve key method to get a value for a given key
-    def retrieve_key(self, key: str) -> str:
-        pass
-
 
 
 
@@ -291,45 +282,3 @@ class ChordNode:
                     print(f"[*] someone already responded")
                 else:
                     print(e)
-
-
-                
-
-
-if __name__ == "__main__":
-    # Get current IP
-    ip = socket.gethostbyname(socket.gethostname())
-
-
-    # First node case
-    if len(sys.argv) == 1:
-
-        # Create node
-        node = ChordNode(ip)
-        print(f"[IP]: {ip}")
-
-        node.join()
-
-
-    # Join node case
-    elif len(sys.argv) == 2:
-        flag = sys.argv[1]
-
-        if flag == "-c":
-            target_ip = SelfDiscovery(ip).find()
-
-            # Create node
-            node = ChordNode(ip)
-            print(f"[IP]: {ip}")
-
-            node.join(ChordNodeReference(target_ip))
-
-
-        else:
-            raise Exception(f"Missing flag: {flag} does not exist")
-
-    else:
-        raise Exception("Incorrect params")
-
-    while True:
-        pass
