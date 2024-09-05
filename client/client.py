@@ -33,30 +33,7 @@ class Client:
 
         self.start()
 
-    def display_error(self, msg: str):
-        print(bcolors.FAIL + msg + bcolors.ENDC)
-
-    def load_bins(self, names: list[str]) -> tuple[list[bytes], bool]:
-        bins: list[bytes] = []
-
-        # Check files existency
-        for file_name in names:
-            if not os.path.isfile(RESOURCES_PATH + file_name):
-                self.display_error(f"{file_name} file not found")
-                return [], False
-
-        for file_name in names:
-            content = []
-            with open(RESOURCES_PATH + file_name, 'rb') as file:
-                while True:
-                    data = file.read(1024)
-                    if not data:
-                        break
-                    content.append(data)
-                bin_content = b''.join(content)
-                bins.append(bin_content)
-
-        return bins, True
+    
 
 
     def start(self):
@@ -80,6 +57,10 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 
         while True:
             user_input = input(bcolors.OKBLUE + "> " + bcolors.ENDC)
+
+            if ',' in user_input:
+                self.display_error("Error: No comma allowed in files name or tags")
+                continue
 
             user_input = user_input.split(" ")
             user_input = [x for x in user_input if x != ""]
@@ -335,6 +316,33 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 
             print("")
 
+    def check_no_comma(self):
+        pass
+
+    def display_error(self, msg: str):
+        print(bcolors.FAIL + msg + bcolors.ENDC)
+
+    def load_bins(self, names: list[str]) -> tuple[list[bytes], bool]:
+        bins: list[bytes] = []
+
+        # Check files existency
+        for file_name in names:
+            if not os.path.isfile(RESOURCES_PATH + file_name):
+                self.display_error(f"{file_name} file not found")
+                return [], False
+
+        for file_name in names:
+            content = []
+            with open(RESOURCES_PATH + file_name, 'rb') as file:
+                while True:
+                    data = file.read(1024)
+                    if not data:
+                        break
+                    content.append(data)
+                bin_content = b''.join(content)
+                bins.append(bin_content)
+
+        return bins, True
 
     def show_list(self, data: dict):
         msg: str = data['msg']
