@@ -168,7 +168,19 @@ class QueryNode(DataNode):
 
 
     def _query_download(self, query_tags: list[str]):
-        pass
+        response: dict = {}
+        response['files_name'] = []
+        response['bins'] = []
+
+        def callback_func():
+            files_to_download = self.tag_query(query_tags)
+            for file_name in files_to_download:
+                response['files_name'].append(file_name)
+                bin = self.download(file_name)
+                response['bins'].append(bin)
+
+        self._request_with_permission([], [], query_tags, callback=callback_func)
+        return response
 
 
 
@@ -265,9 +277,9 @@ class QueryNode(DataNode):
 
             elif operation == 'download':
                 query_tags = client_socket.recv(1024).decode().split(';')
-                response = self._query_download(query_tags)
-                file_names = response['file_names']
-                file_bins = response['bins']
+                file_resp = self._query_download(query_tags)
+                file_names = file_resp['files_name']
+                file_bins = file_resp['bins']
 
                 for i in range(len(file_names)):
                     client_socket.sendall(file_names[i].encode())

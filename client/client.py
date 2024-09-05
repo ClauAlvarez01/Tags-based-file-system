@@ -29,6 +29,8 @@ class Client:
         self.target_ip = target_ip if target_ip else '172.17.0.2'
         self.target_port = target_port if target_port else 8003
 
+        self.downloads_path = 'client/downloads'
+
         self.start()
 
     def display_error(self, msg: str):
@@ -280,6 +282,7 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                 
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     s.connect((self.target_ip, self.target_port))
+                    print("Downloading...")
 
                     # Send operation
                     s.sendall('download'.encode())
@@ -300,10 +303,11 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         # Send file name received ACK
                         s.sendall(f"{OK}".encode())
 
-                        file_content = ''
+                        file_content = b''
                         while True:
-                            fragment = s.recv(1024).decode()
-                            if fragment == f"{END_FILE}":
+                            fragment = s.recv(1024)
+                            print(fragment)
+                            if fragment.decode() == f"{END_FILE}":
                                 break
                             else:
                                 file_content += fragment
@@ -314,6 +318,8 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         #Guardar archivos en txt 
                         self.save_file(file_name, file_content)
 
+
+                    print(f"{bcolors.OKGREEN}Download completed{bcolors.ENDC}")
                     s.sendall(f"{OK}".encode())
                     s.close()
 
@@ -349,12 +355,12 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
             print(f"{bcolors.FAIL}{failed[i]}{bcolors.ENDC} \n  Reason: {failed_msg[i]}")
 
 
-    def save_file(file_name: str, content: str):
+    def save_file(self, file_name: str, content: bytes):
         downloads_folder = os.path.join(os.path.dirname(__file__), 'downloads')
         
         file_path = os.path.join(downloads_folder, file_name)
         
-        with open(file_path, 'w') as file:
+        with open(file_path, 'wb') as file:
             file.write(content)
 
 

@@ -177,13 +177,16 @@ class ChordNodeReference:
             s.sendall(f"{RETRIEVE_BIN},{file_name}".encode('utf-8'))
 
             file_bin = b''
+            end_file = f"{END_FILE}".encode()
             while True:
                 fragment = s.recv(1024)
-                if fragment.decode() == f"{END_FILE}":
+                if end_file in fragment:
+                    file_bin += fragment.split(end_file)[0]
                     break
                 else:
                     file_bin += fragment
-            
+                    
+            s.close()
             return file_bin
 
     # ====================================================================

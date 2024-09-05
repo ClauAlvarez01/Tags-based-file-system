@@ -292,10 +292,10 @@ class DataNode(ChordNode):
             file_bin = self.database.retrieve_bin(file_name)
 
             conn.sendall(file_bin)
-            conn.sendall(f"{END_FILE}")
+            conn.sendall(f"{END_FILE}".encode())
 
 
-        
+
         if response:
             response = response.encode()
             conn.sendall(response)
