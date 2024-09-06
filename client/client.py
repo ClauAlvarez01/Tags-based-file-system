@@ -1,7 +1,10 @@
-import json
 import os
+import sys
+import json
+import time
 import socket
 import threading
+import ipaddress
 
 class bcolors:
     HEADER = '\033[95m'
@@ -18,6 +21,72 @@ RESOURCES_PATH = "resources/"
 OK = 0
 END = 100
 END_FILE = 200
+
+
+
+
+
+
+
+DISCOVER = 13
+ENTRY_POINT = 14
+DEFAULT_BROADCAST_PORT = 8255
+SELF_DISC_SYMBOL = "🔎"
+
+
+class SelfDiscovery:
+    def __init__(self, ip: str, port: int = 8200) -> None:
+        self.ip = ip
+        self.port = port
+
+        self.target_ip = None
+
+        threading.Thread(target=self._recv, daemon=True).start()
+
+    
+    def find(self) -> str:
+        print(f"[{SELF_DISC_SYMBOL}] Self Discovery started")
+
+        self._send(f'{DISCOVER},{self.ip},{self.port}')
+
+        while not self.target_ip:
+            time.sleep(0.25)
+        
+        print(f"[{SELF_DISC_SYMBOL}] discovered {self.target_ip}")
+        return self.target_ip
+        
+
+    def _send(self, message: str):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.sendto(message.encode(), ('255.255.255.255', DEFAULT_BROADCAST_PORT))
+
+
+    def _recv(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind((self.ip, self.port))
+            s.listen(5)
+
+            while True:
+                conn, addr = s.accept()
+
+                # Refuse self messages
+                if addr[0] == self.ip:
+                    continue
+
+                data = conn.recv(1024).decode().split(',')
+                option = int(data[0])
+
+                if option == ENTRY_POINT:
+                    self.target_ip = data[1]
+                    conn.close()
+                    s.close()
+                    break
+
+
+
+
 
 
 
@@ -378,4 +447,21 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 
 
 if __name__ == "__main__":
-    Client()
+
+    ip = socket.gethostbyname(socket.gethostname())
+
+    # Connect to any node
+    if len(sys.argv) == 1:
+        target_ip = SelfDiscovery(ip).find()
+        Client(target_ip=target_ip)
+
+    # Connect to specific IP addres
+    elif len(sys.argv) == 2:
+        target_ip = sys.argv[1]
+        try:
+            ipaddress.ip_address(target_ip)
+        except:
+            raise Exception(f"{target_ip} cannot be interpreted as an IP address")
+
+        Client(target_ip=target_ip)
+        

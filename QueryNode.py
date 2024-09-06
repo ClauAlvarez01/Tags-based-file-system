@@ -347,7 +347,7 @@ if __name__ == "__main__":
                 try:
                     ipaddress.ip_address(target_ip)
                 except:
-                    raise Exception(f"{target_ip} cannot be interpreted as an IP addres")
+                    raise Exception(f"{target_ip} cannot be interpreted as an IP address")
 
             # Create node
             node = QueryNode(ip)
