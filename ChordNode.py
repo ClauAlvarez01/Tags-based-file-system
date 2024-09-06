@@ -46,12 +46,6 @@ class ChordNode:
                 self.election.leader_lost()
 
     
-    # Helper method to check if a value is in the range (start, end]
-    def _inbetween(self, k: int, start: int, end: int) -> bool:
-        if start < end:
-            return start < k <= end
-        else:  # The interval wraps around 0
-            return start < k or k <= end
 
     # Method to find the successor of a given id
     def find_succ(self, id: int) -> 'ChordNodeReference':
@@ -64,7 +58,7 @@ class ChordNode:
     # Method to find the predecessor of a given id
     def find_pred(self, id: int) -> 'ChordNodeReference':
         node = self
-        while not self._inbetween(id, node.id, node.succ.id):
+        while not inbetween(id, node.id, node.succ.id):
             node = node.succ
             # node = node.closest_preceding_finger(id)
         return node.ref if isinstance(node, ChordNode) else node
@@ -110,7 +104,7 @@ class ChordNode:
                     if x.id != self.id:
                         
                         # Check is there is anyone between me and my successor
-                        if x and self._inbetween(x.id, self.id, self.succ.id):
+                        if x and inbetween(x.id, self.id, self.succ.id):
                             # Setearlo si no es el mismo
                             if x.id != self.succ.id:
                                 self.succ = x
@@ -138,7 +132,7 @@ class ChordNode:
             # Check node still exists
             elif node.check_node():
                 # Check if node is between my predecessor and me
-                if self._inbetween(node.id, self.pred.id, self.id):
+                if inbetween(node.id, self.pred.id, self.id):
                     self.pred = node
                     self.update_replication(True, False)
         print(f"[*] end act...")
