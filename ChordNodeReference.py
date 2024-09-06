@@ -22,10 +22,10 @@ class ChordNodeReference:
             return b''
 
     # Method to find the successor of a given id
-    def find_successor(self, id: int) -> 'ChordNodeReference':
-        response = self._send_chord_data(FIND_SUCCESSOR, str(id)).decode().split(',')
-        ip = response[1]
-        return ChordNodeReference(ip, self.chord_port)
+    # def find_successor(self, id: int) -> 'ChordNodeReference':
+    #     response = self._send_chord_data(FIND_SUCCESSOR, str(id)).decode().split(',')
+    #     ip = response[1]
+    #     return ChordNodeReference(ip, self.chord_port)
 
     # Method to find the predecessor of a given id
     def find_predecessor(self, id: int) -> 'ChordNodeReference':
@@ -67,19 +67,10 @@ class ChordNodeReference:
         leader = self._send_chord_data(GET_LEADER).decode().split(',')[1]
         return leader
     
-    # Method to find the closest preceding finger of a given id
-    def closest_preceding_finger(self, id: int) -> 'ChordNodeReference':
-        response = self._send_chord_data(CLOSEST_PRECEDING_FINGER, str(id)).decode().split(',')
+    def lookup(self, id: int):
+        response = self._send_chord_data(LOOKUP, str(id)).decode().split(',')
         return ChordNodeReference(response[1], self.chord_port)
-
-    # Method to store a key-value pair in the current node
-    def store_key(self, key: str, value: str):
-        pass
-
-    # Method to retrieve a value for a given key from the current node
-    def retrieve_key(self, key: str) -> str:
-        pass
-
+    
 
 
 

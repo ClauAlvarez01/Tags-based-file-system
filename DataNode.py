@@ -85,7 +85,7 @@ class DataNode(ChordNode):
         all_files_list: list[list[str]] = []
         for tag in tags:
             tag_hash = getShaRepr(tag)
-            owner = self.find_succ(tag_hash)
+            owner = self.lookup(tag_hash)
             files_list = owner.retrieve_tag(tag)
             all_files_list.append(files_list)
 
@@ -98,7 +98,7 @@ class DataNode(ChordNode):
     def copy(self, file_name: str, bin: bytes, tags: list[str]) -> bool:
         """Copy a file to the system, returns False if value already exists"""
         file_name_hash = getShaRepr(file_name)
-        file_owner = self.find_succ(file_name_hash)
+        file_owner = self.lookup(file_name_hash)
 
         # Check already exist file error
         if file_owner.owns_file(file_name):
@@ -122,7 +122,7 @@ class DataNode(ChordNode):
     def remove(self, file_name: str) -> bool:
         """Remove a file from system, returns False if value does not exists"""
         file_name_hash = getShaRepr(file_name)
-        file_owner = self.find_succ(file_name_hash)
+        file_owner = self.lookup(file_name_hash)
 
         # Check does not exist file error
         if not file_owner.owns_file(file_name):
@@ -144,7 +144,7 @@ class DataNode(ChordNode):
     def inspect(self, file_name: str) -> list[str]:
         """Returns the list of tags associated to given file name"""
         file_name_hash = getShaRepr(file_name)
-        file_owner = self.find_succ(file_name_hash)
+        file_owner = self.lookup(file_name_hash)
 
         tags = file_owner.retrieve_file(file_name)
         return tags
@@ -152,7 +152,7 @@ class DataNode(ChordNode):
     def add_tags(self, file_name: str, tags: list[str]) -> bool:
         """Adds tags to given file name"""
         file_name_hash = getShaRepr(file_name)
-        file_owner = self.find_succ(file_name_hash)
+        file_owner = self.lookup(file_name_hash)
 
         current_file_tags = self.inspect(file_name)
         for tag in tags:
@@ -171,7 +171,7 @@ class DataNode(ChordNode):
 
     def delete_tags(self, file_name: str, tags: list[str]):
         file_name_hash = getShaRepr(file_name)
-        file_owner = self.find_succ(file_name_hash)
+        file_owner = self.lookup(file_name_hash)
 
         current_file_tags = self.inspect(file_name)
         for tag in tags:
@@ -193,7 +193,7 @@ class DataNode(ChordNode):
     def download(self, file_name: str) -> bytes:
         """Returns the binary content of given file name"""
         file_name_hash = getShaRepr(file_name)
-        file_owner = self.find_succ(file_name_hash)
+        file_owner = self.lookup(file_name_hash)
 
         bin = file_owner.retrieve_bin(file_name)
         return bin
@@ -323,7 +323,7 @@ class DataNode(ChordNode):
     ############################### HANDLERS ###############################
     def handle_insert_tag(self, tag: str):
         tag_hash = getShaRepr(tag)
-        owner = self.find_succ(tag_hash)
+        owner = self.lookup(tag_hash)
         # I am owner
         if owner.id == self.id:
             if self.database.owns_tag(tag):
@@ -338,7 +338,7 @@ class DataNode(ChordNode):
         
     def handle_delete_tag(self, tag: str):
         tag_hash = getShaRepr(tag)
-        owner = self.find_succ(tag_hash)
+        owner = self.lookup(tag_hash)
         # I am owner
         if owner.id == self.id:
             if not self.database.owns_tag(tag):
@@ -353,7 +353,7 @@ class DataNode(ChordNode):
 
     def handle_append_file(self, tag: str, file_name: str):
         tag_hash = getShaRepr(tag)
-        owner = self.find_succ(tag_hash)
+        owner = self.lookup(tag_hash)
         # I am owner
         if owner.id == self.id:
             self.database.append_file(tag, file_name, self.succ.ip)
@@ -365,7 +365,7 @@ class DataNode(ChordNode):
 
     def handle_remove_file(self, tag: str, file_name: str):
         tag_hash = getShaRepr(tag)
-        owner = self.find_succ(tag_hash)
+        owner = self.lookup(tag_hash)
 
         # I am owner
         if owner.id == self.id:
@@ -383,7 +383,7 @@ class DataNode(ChordNode):
 
     def handle_insert_file(self, file_name: str):
         file_name_hash = getShaRepr(file_name)
-        owner = self.find_succ(file_name_hash)
+        owner = self.lookup(file_name_hash)
         # I am owner
         if owner.id == self.id:
             if self.database.owns_file(file_name):
@@ -398,7 +398,7 @@ class DataNode(ChordNode):
         
     def handle_delete_file(self, file_name: str):
         file_name_hash = getShaRepr(file_name)
-        owner = self.find_succ(file_name_hash)
+        owner = self.lookup(file_name_hash)
         # I am owner
         if owner.id == self.id:
             if not self.database.owns_file(file_name):
@@ -413,7 +413,7 @@ class DataNode(ChordNode):
         
     def handle_append_tag(self, file_name: str, tag: str):
         file_name_hash = getShaRepr(file_name)
-        owner = self.find_succ(file_name_hash)
+        owner = self.lookup(file_name_hash)
         # I am owner
         if owner.id == self.id:
             self.database.append_tag(file_name, tag, self.succ.ip)
@@ -425,7 +425,7 @@ class DataNode(ChordNode):
         
     def handle_remove_tag(self, file_name: str, tag: str):
         file_name_hash = getShaRepr(file_name)
-        owner = self.find_succ(file_name_hash)
+        owner = self.lookup(file_name_hash)
 
         # I am owner
         if owner.id == self.id:
@@ -442,7 +442,7 @@ class DataNode(ChordNode):
 
     def handle_insert_bin(self, file_name: str, bin: bytes):
         file_name_hash = getShaRepr(file_name)
-        owner = self.find_succ(file_name_hash)
+        owner = self.lookup(file_name_hash)
 
         # I am owner
         if owner.id == self.id:
@@ -455,7 +455,7 @@ class DataNode(ChordNode):
         
     def handle_delete_bin(self, file_name: str):
         file_name_hash = getShaRepr(file_name)
-        owner = self.find_succ(file_name_hash)
+        owner = self.lookup(file_name_hash)
 
         # I am owner
         if owner.id == self.id:

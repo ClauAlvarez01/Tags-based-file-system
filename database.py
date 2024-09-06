@@ -373,8 +373,6 @@ class Database:
 
     # Function to pull all data from node's predecessor and store it in replication dict
     def pull_replication(self, owner_ip: str):
-        print(f"I pull replication from {owner_ip}")
-
         # Delete current replicates
         for k, _ in self.replicated_files.items():
             os.remove(f"{self.replicated_bins_path}/{k}")
@@ -410,7 +408,9 @@ class Database:
             self.save_replicated_tags()
             self.save_replicated_files()
 
+            print(f"[📩] I pulled replication from {owner_ip}")
             s.close()
+
     
 
     # Function to notify my replications listeners, that my data has changed
