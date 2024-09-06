@@ -53,9 +53,9 @@ class LeaderElection:
 
             elif self.in_election:
                 counter += 1
-                if counter == 6:
+                if counter == 10:
                     
-                    # after waiting 3 seconds, if there is no leader still, then i'm leader
+                    # after waiting 5 seconds, if there is no leader still, then i'm leader
                     if not self.leader or self._bully(self.id, self.leader):
                         print(f"[{ELECTION_SYMBOL}] I am the new leader")
                         self.its_me = True
