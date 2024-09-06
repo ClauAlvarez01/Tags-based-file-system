@@ -184,6 +184,22 @@ class QueryNode(DataNode):
         return response
 
 
+    def _inspect_tag(self, tag: str):
+        response: dict = {}
+        response['file_names'] = []
+        response['tag'] = 'tag'
+
+        pass
+
+
+    def _inspect_file(self, file_name: str):
+        response: dict = {}
+        response['file_name'] = file_name
+        response['tag'] = []
+
+        pass
+
+
 
     # Server
     def start_query_server(self):
@@ -207,7 +223,7 @@ class QueryNode(DataNode):
             operation = client_socket.recv(1024).decode()
 
             # Send ACK if operation is correct
-            if operation in {'add', 'delete', 'list', 'add-tags', 'delete-tags', 'download'}:
+            if operation in {'add', 'delete', 'list', 'add-tags', 'delete-tags', 'download', 'inspect-tag', 'inspect-file'}:
                 client_socket.sendall(f"{OK}".encode())
             else:
                 client_socket.sendall(f"Unrecognized operation: {operation}".encode())
@@ -303,6 +319,16 @@ class QueryNode(DataNode):
                 if ack != f"{OK}": raise Exception("Negative ACK")
                 
                 return
+
+
+            elif operation == 'inspect-tag':
+                tag = client_socket.recv(1024).decode()
+                response = self._inspect_tag(tag)
+
+
+            elif operation == 'inspect-file':
+                file_name = client_socket.recv(1024).decode()
+                response = self._inspect_file(file_name)
 
 
             response_str = json.dumps(response)

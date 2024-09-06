@@ -113,6 +113,8 @@ class Client:
 => {bcolors.OKBLUE}add-tags      {bcolors.ENDC}<tag-query>  <tag-list>  <=
 => {bcolors.OKBLUE}delete-tags   {bcolors.ENDC}<tag-query>  <tag-list>  <=
 => {bcolors.OKBLUE}download      {bcolors.ENDC}<tag-query>              <=
+=> {bcolors.OKBLUE}inspect-tag   {bcolors.ENDC}<tag>                    <=
+=> {bcolors.OKBLUE}inspect-file  {bcolors.ENDC}<file-name>              <=
 => {bcolors.OKBLUE}info          {bcolors.ENDC}                         <=
 => {bcolors.OKBLUE}exit          {bcolors.ENDC}                         <=
 ============================================
@@ -379,6 +381,72 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                     s.close()
 
 
+            elif cmd == 'inspect-tag':
+                if len(params) != 1: 
+                    self.display_error(f"'inspect-tag' command require 1 param but {len(params)} were given")
+                    continue
+
+                tag = params[0]
+
+                if len(tag) != 1: 
+                    self.display_error(f"'inspect-tag' command is only valid for retrieving file names for a specific tag")
+                    continue
+                
+                tag: str = tag[0]
+
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.connect((self.target_ip, self.target_port))
+
+                    # Send operation
+                    s.sendall('inspect-tag'.encode())
+
+                    # Wait for OK
+                    ack = s.recv(1024).decode()
+                    if ack != f"{OK}": raise Exception("Negative ACK")
+
+                    # Send tag
+                    s.sendall(tag.encode())
+
+                    # Wait response
+                    response = s.recv(1024).decode()
+                    response = json.loads(response)
+                    s.close()
+                    self.show_tag_file_relationship(response, 'files_by_tag')
+
+
+            elif cmd == 'inspect-file':
+                if len(params) != 1: 
+                    self.display_error(f"'inspect-file' command require 1 param but {len(params)} were given")
+                    continue
+
+                file_name = params[0]
+
+                if len(file_name) != 1: 
+                    self.display_error(f"'inspect-file' command is only valid for retrieving tags for a specific file name")
+                    continue
+                
+                file_name: str = file_name[0]
+
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.connect((self.target_ip, self.target_port))
+
+                    # Send operation
+                    s.sendall('inspect-file'.encode())
+
+                    # Wait for OK
+                    ack = s.recv(1024).decode()
+                    if ack != f"{OK}": raise Exception("Negative ACK")
+
+                    # Send tag
+                    s.sendall(file_name.encode())
+
+                    # Wait response
+                    response = s.recv(1024).decode()
+                    response = json.loads(response)
+                    s.close()
+                    self.show_tag_file_relationship(response, 'tags_by_file')
+
+
             else:
                 self.display_error("Command not found")
                 continue
@@ -444,6 +512,35 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
         
         with open(file_path, 'wb') as file:
             file.write(content)
+
+
+    def show_tag_file_relationship(self, data: dict, mode: str):
+        if mode == 'files_by_tag':
+            file_names: list = data['file_names']
+            tag: str = data['tag']
+
+            if not file_names:
+                print(f"{bcolors.WARNING}No files found for the tag '{tag}'.{bcolors.ENDC}")
+                return
+
+            print(f"{bcolors.HEADER}Files associated with tag '{tag}':{bcolors.ENDC}")
+            for file_name in file_names:
+                print(f"{bcolors.OKBLUE}{file_name}{bcolors.ENDC}")
+
+        elif mode == 'tags_by_file':
+            file_name: str = data['file_name']
+            tags: list = data['tags']
+
+            if not tags:
+                print(f"{bcolors.WARNING}No tags found for the file '{file_name}'.{bcolors.ENDC}")
+                return
+
+            print(f"{bcolors.HEADER}Tags associated with file '{file_name}':{bcolors.ENDC}")
+            for tag in tags:
+                print(f"{bcolors.OKBLUE}{tag}{bcolors.ENDC}")
+
+        else:
+            print(f"{bcolors.FAIL}Invalid mode: {mode}{bcolors.ENDC}")
 
 
 if __name__ == "__main__":
