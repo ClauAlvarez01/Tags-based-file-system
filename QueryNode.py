@@ -3,6 +3,7 @@ import os
 import sys
 import socket
 import threading
+import ipaddress
 import time
 from const import *
 from leader import Leader
@@ -329,16 +330,24 @@ if __name__ == "__main__":
         # Create node
         node = QueryNode(ip)
         print(f"[IP]: {ip}")
-
         node.join()
 
-
-    # Join node case
-    elif len(sys.argv) == 2:
+    # Join node cases
+    elif len(sys.argv) in [2, 3]:
         flag = sys.argv[1]
 
         if flag == "-c":
-            target_ip = SelfDiscovery(ip).find()
+            # Connect using self discovery
+            if len(sys.argv) == 2:
+                target_ip = SelfDiscovery(ip).find()
+
+            # Connect using especific ip addres
+            else:
+                target_ip = sys.argv[2]
+                try:
+                    ipaddress.ip_address(target_ip)
+                except:
+                    raise Exception(f"{target_ip} cannot be interpreted as an IP addres")
 
             # Create node
             node = QueryNode(ip)

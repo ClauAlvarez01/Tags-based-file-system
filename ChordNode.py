@@ -75,8 +75,12 @@ class ChordNode:
 
     # Method to join a Chord network using 'node' as an entry point
     def join(self, node: 'ChordNodeReference' = None):
+        self.election.adopt_leader(self.ip)
         print("[*] Joining...")
         if node:
+            if not node.check_node():
+                raise Exception(f"There is no node using the address {node.ip}")
+            
             self.pred = None
             self.succ = node.find_successor(self.id)
             self.election.adopt_leader(node.get_leader())
