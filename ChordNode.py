@@ -81,7 +81,7 @@ class ChordNode:
 
     # Fix fingers method to periodically update the finger table
     def fix_fingers(self):
-        batch_size = 4
+        batch_size = 10
         while True:
             for _ in range(batch_size):
                 try:
@@ -90,7 +90,8 @@ class ChordNode:
                         self.next = 0
                     self.finger[self.next] = self.lookup((self.id + 2 ** self.next) % 2 ** self.m)
                 except Exception as e:
-                    print(f"Error in fix_fingers: {e}")
+                    # print(f"Error in fix_fingers: {e}")
+                    pass
             time.sleep(5)
 
 
