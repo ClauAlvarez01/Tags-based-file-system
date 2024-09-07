@@ -257,7 +257,7 @@ class ChordNode:
 
         # Send response
         if data_resp:
-            response = f'{data_resp.id},{data_resp.ip}'.encode()
+            response = f'{data_resp.id},{data_resp.ip}'.encode('utf-8')
             conn.sendall(response)
         conn.close()
 
@@ -272,7 +272,7 @@ class ChordNode:
 
             while True:
                 conn, addr = s.accept()
-                data = conn.recv(1024).decode().split(',')
+                data = conn.recv(1024).decode('utf-8').split(',')
 
                 threading.Thread(target=self.request_handler, args=(conn, addr, data)).start()
 
@@ -290,7 +290,7 @@ class ChordNode:
                 continue
 
             print(f"[*] Broadcast message received from {addr}")
-            data = data.decode().split(',')
+            data = data.decode('utf-8').split(',')
             option = int(data[0])
 
             if option == DISCOVER:

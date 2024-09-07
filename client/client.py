@@ -63,7 +63,7 @@ class SelfDiscovery:
     def _send(self, message: str):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        sock.sendto(message.encode(), ('255.255.255.255', DEFAULT_BROADCAST_PORT))
+        sock.sendto(message.encode('utf-8'), ('255.255.255.255', DEFAULT_BROADCAST_PORT))
 
 
     def _recv(self):
@@ -79,7 +79,7 @@ class SelfDiscovery:
                 if addr[0] == self.ip:
                     continue
 
-                data = conn.recv(1024).decode().split(',')
+                data = conn.recv(1024).decode('utf-8').split(',')
                 option = int(data[0])
 
                 if option == ENTRY_POINT:
@@ -171,40 +171,40 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         s.connect((self.target_ip, self.target_port))
 
                         # Send operation
-                        s.sendall('add'.encode())
+                        s.sendall('add'.encode('utf-8'))
 
                         # Wait for OK
-                        ack = s.recv(1024).decode()
+                        ack = s.recv(1024).decode('utf-8')
                         if ack != f"{OK}": raise Exception("Negative ACK")
 
                         # Send each file
                         for i in range(len(files_name)):
                             # Send name
-                            s.sendall(files_name[i].encode())
+                            s.sendall(files_name[i].encode('utf-8'))
 
                             # Wait for OK
-                            ack = s.recv(1024).decode()
+                            ack = s.recv(1024).decode('utf-8')
                             if ack != f"{OK}": raise Exception("Negative ACK")
 
                             # Send bin and END_FILE
                             s.sendall(files_bin[i])
-                            s.sendall(f"{END_FILE}".encode())
+                            s.sendall(f"{END_FILE}".encode('utf-8'))
 
                             # Wait for OK
-                            ack = s.recv(1024).decode()
+                            ack = s.recv(1024).decode('utf-8')
                             if ack != f"{OK}": raise Exception("Negative ACK")
 
-                        s.sendall(f"{END}".encode())
+                        s.sendall(f"{END}".encode('utf-8'))
 
                         # Wait for OK
-                        ack = s.recv(1024).decode()
+                        ack = s.recv(1024).decode('utf-8')
                         if ack != f"{OK}": raise Exception("Negative ACK")
 
                         # Send tags
-                        s.sendall(tags.encode())
+                        s.sendall(tags.encode('utf-8'))
 
                         # Wait response
-                        response = s.recv(1024).decode()
+                        response = s.recv(1024).decode('utf-8')
                         response = json.loads(response)
                         s.close()
                         self.show_results(response)
@@ -224,17 +224,17 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         s.connect((self.target_ip, self.target_port))
 
                         # Send operation
-                        s.sendall('delete'.encode())
+                        s.sendall('delete'.encode('utf-8'))
 
                         # Wait for OK
-                        ack = s.recv(1024).decode()
+                        ack = s.recv(1024).decode('utf-8')
                         if ack != f"{OK}": raise Exception("Negative ACK")
 
                         # Send query tags
-                        s.sendall(tags_query.encode())
+                        s.sendall(tags_query.encode('utf-8'))
 
                         # Wait response
-                        response = s.recv(1024).decode()
+                        response = s.recv(1024).decode('utf-8')
                         response = json.loads(response)
                         s.close()
                         self.show_results(response)
@@ -254,17 +254,17 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         s.connect((self.target_ip, self.target_port))
 
                         # Send operation
-                        s.sendall('list'.encode())
+                        s.sendall('list'.encode('utf-8'))
 
                         # Wait for OK
-                        ack = s.recv(1024).decode()
+                        ack = s.recv(1024).decode('utf-8')
                         if ack != f"{OK}": raise Exception("Negative ACK")
 
                         # Send query tags
-                        s.sendall(tags_query.encode())
+                        s.sendall(tags_query.encode('utf-8'))
 
                         # Wait response
-                        response = s.recv(1024).decode()
+                        response = s.recv(1024).decode('utf-8')
                         response = json.loads(response)
                         s.close()
                         self.show_list(response)
@@ -285,24 +285,24 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         s.connect((self.target_ip, self.target_port))
 
                         # Send operation
-                        s.sendall('add-tags'.encode())
+                        s.sendall('add-tags'.encode('utf-8'))
 
                         # Wait for OK
-                        ack = s.recv(1024).decode()
+                        ack = s.recv(1024).decode('utf-8')
                         if ack != f"{OK}": raise Exception("Negative ACK")
 
                         # Send query tags
-                        s.sendall(tags_query.encode())
+                        s.sendall(tags_query.encode('utf-8'))
 
                         # Wait for OK
-                        ack = s.recv(1024).decode()
+                        ack = s.recv(1024).decode('utf-8')
                         if ack != f"{OK}": raise Exception("Negative ACK")
 
                         # Send tags
-                        s.sendall(tags.encode())
+                        s.sendall(tags.encode('utf-8'))
 
                         # Wait response
-                        response = s.recv(1024).decode()
+                        response = s.recv(1024).decode('utf-8')
                         response = json.loads(response)
                         s.close()
                         self.show_results(response)
@@ -323,24 +323,24 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         s.connect((self.target_ip, self.target_port))
 
                         # Send operation
-                        s.sendall('delete-tags'.encode())
+                        s.sendall('delete-tags'.encode('utf-8'))
 
                         # Wait for OK
-                        ack = s.recv(1024).decode()
+                        ack = s.recv(1024).decode('utf-8')
                         if ack != f"{OK}": raise Exception("Negative ACK")
 
                         # Send query tags
-                        s.sendall(tags_query.encode())
+                        s.sendall(tags_query.encode('utf-8'))
 
                         # Wait for OK
-                        ack = s.recv(1024).decode()
+                        ack = s.recv(1024).decode('utf-8')
                         if ack != f"{OK}": raise Exception("Negative ACK")
 
                         # Send tags
-                        s.sendall(tags.encode())
+                        s.sendall(tags.encode('utf-8'))
 
                         # Wait response
-                        response = s.recv(1024).decode()
+                        response = s.recv(1024).decode('utf-8')
                         response = json.loads(response)
                         s.close()
                         self.show_results(response)
@@ -361,26 +361,26 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         print("Downloading...")
 
                         # Send operation
-                        s.sendall('download'.encode())
+                        s.sendall('download'.encode('utf-8'))
 
                         # Wait for OK
-                        ack = s.recv(1024).decode()
+                        ack = s.recv(1024).decode('utf-8')
                         if ack != f"{OK}": raise Exception("Negative ACK")
 
                         # Send query tags
-                        s.sendall(tags_query.encode())
+                        s.sendall(tags_query.encode('utf-8'))
 
                         # Wait response
                         while True:
-                            file_name = s.recv(1024).decode()
+                            file_name = s.recv(1024).decode('utf-8')
                             if file_name == f"{END}":
                                 break
                         
                             # Send file name received ACK
-                            s.sendall(f"{OK}".encode())
+                            s.sendall(f"{OK}".encode('utf-8'))
 
                             file_content = b''
-                            end_file = f"{END_FILE}".encode()
+                            end_file = f"{END_FILE}".encode('utf-8')
                             while True:
                                 fragment = s.recv(1024)
                                 if end_file in fragment:
@@ -390,14 +390,14 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                                     file_content += fragment
                         
                             # Send file bin received ACK
-                            s.sendall(f"{OK}".encode())
+                            s.sendall(f"{OK}".encode('utf-8'))
 
                             #Guardar archivos en txt 
                             self.save_file(file_name, file_content)
 
 
                         print(f"{bcolors.OKGREEN}Download completed{bcolors.ENDC}")
-                        s.sendall(f"{OK}".encode())
+                        s.sendall(f"{OK}".encode('utf-8'))
                         s.close()
                 except:
                     self.display_error("The operation could not be completed")
@@ -421,17 +421,17 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         s.connect((self.target_ip, self.target_port))
 
                         # Send operation
-                        s.sendall('inspect-tag'.encode())
+                        s.sendall('inspect-tag'.encode('utf-8'))
 
                         # Wait for OK
-                        ack = s.recv(1024).decode()
+                        ack = s.recv(1024).decode('utf-8')
                         if ack != f"{OK}": raise Exception("Negative ACK")
 
                         # Send tag
-                        s.sendall(tag.encode())
+                        s.sendall(tag.encode('utf-8'))
 
                         # Wait response
-                        response = s.recv(1024).decode()
+                        response = s.recv(1024).decode('utf-8')
                         response = json.loads(response)
                         s.close()
                         self.show_tag_file_relationship(response, 'files_by_tag')
@@ -457,17 +457,17 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         s.connect((self.target_ip, self.target_port))
 
                         # Send operation
-                        s.sendall('inspect-file'.encode())
+                        s.sendall('inspect-file'.encode('utf-8'))
 
                         # Wait for OK
-                        ack = s.recv(1024).decode()
+                        ack = s.recv(1024).decode('utf-8')
                         if ack != f"{OK}": raise Exception("Negative ACK")
 
                         # Send tag
-                        s.sendall(file_name.encode())
+                        s.sendall(file_name.encode('utf-8'))
 
                         # Wait response
-                        response = s.recv(1024).decode()
+                        response = s.recv(1024).decode('utf-8')
                         response = json.loads(response)
                         s.close()
                         self.show_tag_file_relationship(response, 'tags_by_file')

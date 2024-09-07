@@ -46,9 +46,9 @@ class RequestNode:
             time.sleep(0.5)
 
         # Green light now
-        self.sock.sendall(f"{OK}".encode())
+        self.sock.sendall(f"{OK}".encode('utf-8'))
 
-        ack = self.sock.recv(1024).decode()
+        ack = self.sock.recv(1024).decode('utf-8')
         if ack != f"{END}":
             print("No OK confirmation from operation")
 
@@ -111,7 +111,7 @@ class Leader:
 
             while True:
                 conn, _ = s.accept()
-                json_str_data = conn.recv(1024).decode()
+                json_str_data = conn.recv(1024).decode('utf-8')
 
                 data = json.loads(json_str_data)
 

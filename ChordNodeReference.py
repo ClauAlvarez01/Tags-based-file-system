@@ -23,26 +23,26 @@ class ChordNodeReference:
 
     # Method to find the successor of a given id
     # def find_successor(self, id: int) -> 'ChordNodeReference':
-    #     response = self._send_chord_data(FIND_SUCCESSOR, str(id)).decode().split(',')
+    #     response = self._send_chord_data(FIND_SUCCESSOR, str(id)).decode('utf-8').split(',')
     #     ip = response[1]
     #     return ChordNodeReference(ip, self.chord_port)
 
     # Method to find the predecessor of a given id
     def find_predecessor(self, id: int) -> 'ChordNodeReference':
-        response = self._send_chord_data(FIND_PREDECESSOR, str(id)).decode().split(',')
+        response = self._send_chord_data(FIND_PREDECESSOR, str(id)).decode('utf-8').split(',')
         ip = response[1]
         return ChordNodeReference(ip, self.chord_port)
 
     # Property to get the successor of the current node
     @property
     def succ(self) -> 'ChordNodeReference':
-        response = self._send_chord_data(GET_SUCCESSOR).decode().split(',')
+        response = self._send_chord_data(GET_SUCCESSOR).decode('utf-8').split(',')
         return ChordNodeReference(response[1], self.chord_port)
 
     # Property to get the predecessor of the current node
     @property
     def pred(self) -> 'ChordNodeReference':
-        response = self._send_chord_data(GET_PREDECESSOR).decode().split(',')
+        response = self._send_chord_data(GET_PREDECESSOR).decode('utf-8').split(',')
         return ChordNodeReference(response[1], self.chord_port)
 
     # Method to notify the current node about another node
@@ -58,17 +58,17 @@ class ChordNodeReference:
     # Method to check if the predecessor is alive
     def check_node(self) -> bool:
         response = self._send_chord_data(CHECK_NODE)
-        if response != b'' and len(response.decode()) > 0:
+        if response != b'' and len(response.decode('utf-8')) > 0:
             # Node provide a response
             return True
         return False
     
     def get_leader(self) -> str:
-        leader = self._send_chord_data(GET_LEADER).decode().split(',')[1]
+        leader = self._send_chord_data(GET_LEADER).decode('utf-8').split(',')[1]
         return leader
     
     def lookup(self, id: int):
-        response = self._send_chord_data(LOOKUP, str(id)).decode().split(',')
+        response = self._send_chord_data(LOOKUP, str(id)).decode('utf-8').split(',')
         return ChordNodeReference(response[1], self.chord_port)
     
 
@@ -90,27 +90,27 @@ class ChordNodeReference:
 
     def insert_tag(self, tag: str) -> str:
         """Inserts a tag in system, if tag already exists, throw no error (works from any node)"""
-        response = self._send_data_data(INSERT_TAG, tag).decode()
+        response = self._send_data_data(INSERT_TAG, tag).decode('utf-8')
         return response
 
     def delete_tag(self, tag: str) -> str:
         """Deletes a tag from system, if tag does not exists, throw no error (works from any node)"""
-        response = self._send_data_data(DELETE_TAG, tag).decode()
+        response = self._send_data_data(DELETE_TAG, tag).decode('utf-8')
         return response
     
     def append_file(self, tag: str, file_name: str):
         """Appends file name to tag (works from any node)"""
-        response = self._send_data_data(APPEND_FILE, f"{tag},{file_name}").decode()
+        response = self._send_data_data(APPEND_FILE, f"{tag},{file_name}").decode('utf-8')
         return response
     
     def remove_file(self, tag: str, file_name: str):
         """Removes file name from tag (works from any node)"""
-        response = self._send_data_data(REMOVE_FILE, f"{tag},{file_name}").decode()
+        response = self._send_data_data(REMOVE_FILE, f"{tag},{file_name}").decode('utf-8')
         return response
     
     def retrieve_tag(self, tag: str) -> list[str]:
         """Retrieves files list from given tag (only works from owner node)"""
-        json_str_data = self._send_data_data(RETRIEVE_TAG, tag).decode()
+        json_str_data = self._send_data_data(RETRIEVE_TAG, tag).decode('utf-8')
         json_data = json.loads(json_str_data)
         return json_data['data']
     
@@ -118,33 +118,33 @@ class ChordNodeReference:
     
     def insert_file(self, file_name: str) -> str:
         """Inserts a file name in system, if already exists, throw no error (works from any node)"""
-        response = self._send_data_data(INSERT_FILE, file_name).decode()
+        response = self._send_data_data(INSERT_FILE, file_name).decode('utf-8')
         return response
 
     def delete_file(self, file_name: str) -> str:
         """Deletes a file name from system, if does not exists, throw no error (works from any node)"""
-        response = self._send_data_data(DELETE_FILE, file_name).decode()
+        response = self._send_data_data(DELETE_FILE, file_name).decode('utf-8')
         return response
     
     def append_tag(self, file_name: str, tag: str):
         """Appends tag to file (works from any node)"""
-        response = self._send_data_data(APPEND_TAG, f"{file_name},{tag}").decode()
+        response = self._send_data_data(APPEND_TAG, f"{file_name},{tag}").decode('utf-8')
         return response
     
     def remove_tag(self, file_name: str, tag: str):
         """Removes tag from file (works from any node)"""
-        response = self._send_data_data(REMOVE_TAG, f"{file_name},{tag}").decode()
+        response = self._send_data_data(REMOVE_TAG, f"{file_name},{tag}").decode('utf-8')
         return response
 
     def retrieve_file(self, file_name: str) -> list[str]:
         """Retrieves tags list from given file name (only works from owner node)"""
-        json_str_data = self._send_data_data(RETRIEVE_FILE, file_name).decode()
+        json_str_data = self._send_data_data(RETRIEVE_FILE, file_name).decode('utf-8')
         json_data = json.loads(json_str_data)
         return json_data['data']
     
     def owns_file(self, file_name: str):
         """Returns '1' if node owns file name, else '0' (only works from owner node)"""
-        response = self._send_data_data(OWNS_FILE, file_name).decode()
+        response = self._send_data_data(OWNS_FILE, file_name).decode('utf-8')
         return response == "1"
 
 
@@ -168,7 +168,7 @@ class ChordNodeReference:
             s.sendall(f"{RETRIEVE_BIN},{file_name}".encode('utf-8'))
 
             file_bin = b''
-            end_file = f"{END_FILE}".encode()
+            end_file = f"{END_FILE}".encode('utf-8')
             while True:
                 fragment = s.recv(1024)
                 if end_file in fragment:

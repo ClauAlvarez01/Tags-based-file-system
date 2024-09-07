@@ -74,7 +74,7 @@ class LeaderElection:
 
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        s.sendto(msg.encode(), (broadcast_ip, PORT))
+        s.sendto(msg.encode('utf-8'), (broadcast_ip, PORT))
         s.close()
     
     def _bully(self, id, otherId):
@@ -121,7 +121,7 @@ class LeaderElection:
                     self.work_done = False
 
                     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                    s.sendto(f'{OK}'.encode(), (sender_id, PORT))
+                    s.sendto(f'{OK}'.encode('utf-8'), (sender_id, PORT))
 
                     threading.Thread(target=self._broadcast_msg, args=(f"{ELECTION}")).start()
                         

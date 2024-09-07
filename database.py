@@ -311,25 +311,25 @@ class Database:
         # Send corresponding data to new owner
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((new_owner_ip, self.db_port))
-            s.sendall(f"{PUSH_DATA}".encode())
+            s.sendall(f"{PUSH_DATA}".encode('utf-8'))
             
-            ack = s.recv(1024).decode()
+            ack = s.recv(1024).decode('utf-8')
             if ack != f"{OK}":
                 raise Exception("ACK negativo")
 
             # Send tags
             tags_json_str = json.dumps(tags_to_delegate)
-            s.sendall(tags_json_str.encode())
+            s.sendall(tags_json_str.encode('utf-8'))
 
-            ack = s.recv(1024).decode()
+            ack = s.recv(1024).decode('utf-8')
             if ack != f"{OK}":
                 raise Exception("ACK negativo")
 
             # Send files
             files_json_str = json.dumps(files_to_delegate)
-            s.sendall(files_json_str.encode())
+            s.sendall(files_json_str.encode('utf-8'))
 
-            ack = s.recv(1024).decode()
+            ack = s.recv(1024).decode('utf-8')
             if ack != f"{OK}":
                 raise Exception("ACK negativo")
             
@@ -337,7 +337,7 @@ class Database:
             send_bins(s, files_to_delegate, self.bins_path)
             
             # Send ip
-            s.sendall(f"{self.db_ip}".encode())
+            s.sendall(f"{self.db_ip}".encode('utf-8'))
             s.close()
 
         print(f"[📤] {i_t} tags delegated")
@@ -372,19 +372,19 @@ class Database:
             s.connect((owner_ip, self.db_port))
 
             # Ask for replication
-            s.sendall(f"{PULL_REPLICATION}".encode())
+            s.sendall(f"{PULL_REPLICATION}".encode('utf-8'))
 
             # Receive tags
-            tags_json_str = s.recv(1024).decode()
+            tags_json_str = s.recv(1024).decode('utf-8')
             tags_data = json.loads(tags_json_str)
 
-            s.sendall(f"{OK}".encode())
+            s.sendall(f"{OK}".encode('utf-8'))
 
             # Receive files
-            files_json_str = s.recv(1024).decode()
+            files_json_str = s.recv(1024).decode('utf-8')
             files_data = json.loads(files_json_str)
 
-            s.sendall(f"{OK}".encode())
+            s.sendall(f"{OK}".encode('utf-8'))
             
             # Receive and write bins
             recv_write_bins(s, self.replicated_bins_path)
@@ -419,120 +419,120 @@ class Database:
 
         while True:
             conn, _ = sock.accept()
-            data = conn.recv(1024).decode()
+            data = conn.recv(1024).decode('utf-8')
             threading.Thread(target=self._handle_recv, args=(conn, data)).start()
 
 
     def _handle_recv(self, conn: socket.socket, data: str):
 
         if data == f"{REPLICATE_STORE_TAG}":
-            conn.sendall(f"{OK}".encode())
-            tag = conn.recv(1024).decode()
+            conn.sendall(f"{OK}".encode('utf-8'))
+            tag = conn.recv(1024).decode('utf-8')
             self.replicated_tags[tag] = []
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_tags()
 
         elif data == f"{REPLICATE_APPEND_FILE}":
-            conn.sendall(f"{OK}".encode())
-            data = conn.recv(1024).decode().split(';')
+            conn.sendall(f"{OK}".encode('utf-8'))
+            data = conn.recv(1024).decode('utf-8').split(';')
             tag, file_name = data[0], data[1]
             self.replicated_tags[tag].append(file_name)
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_tags()
 
         elif data == f"{REPLICATE_DELETE_TAG}":
-            conn.sendall(f"{OK}".encode())
-            tag = conn.recv(1024).decode()
+            conn.sendall(f"{OK}".encode('utf-8'))
+            tag = conn.recv(1024).decode('utf-8')
             del self.replicated_tags[tag]
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_tags()
 
         elif data == f"{REPLICATE_REMOVE_FILE}":
-            conn.sendall(f"{OK}".encode())
-            data = conn.recv(1024).decode().split(';')
+            conn.sendall(f"{OK}".encode('utf-8'))
+            data = conn.recv(1024).decode('utf-8').split(';')
             tag, file_name = data[0], data[1]
             self.replicated_tags[tag].remove(file_name)
             if len(self.replicated_tags[tag]) == 0:
                 del self.replicated_tags[tag]
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_tags()
 
 
         
         elif data == f"{REPLICATE_STORE_FILE}":
-            conn.sendall(f"{OK}".encode())
-            file_name = conn.recv(1024).decode()
+            conn.sendall(f"{OK}".encode('utf-8'))
+            file_name = conn.recv(1024).decode('utf-8')
             self.replicated_files[file_name] = []
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_files()
 
         elif data == f"{REPLICATE_APPEND_TAG}":
-            conn.sendall(f"{OK}".encode())
-            data = conn.recv(1024).decode().split(';')
+            conn.sendall(f"{OK}".encode('utf-8'))
+            data = conn.recv(1024).decode('utf-8').split(';')
             file_name, tag = data[0], data[1]
             self.replicated_files[file_name].append(tag)
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_files()
 
         elif data == f"{REPLICATE_DELETE_FILE}":
-            conn.sendall(f"{OK}".encode())
-            file_name = conn.recv(1024).decode()
+            conn.sendall(f"{OK}".encode('utf-8'))
+            file_name = conn.recv(1024).decode('utf-8')
             del self.replicated_files[file_name]
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_files()
 
         elif data == f"{REPLICATE_REMOVE_TAG}":
-            conn.sendall(f"{OK}".encode())
-            data = conn.recv(1024).decode().split(';')
+            conn.sendall(f"{OK}".encode('utf-8'))
+            data = conn.recv(1024).decode('utf-8').split(';')
             file_name, tag = data[0], data[1]
             self.replicated_files[file_name].remove(tag)
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_files()
 
 
         
         elif data == f"{REPLICATE_STORE_BIN}":
-            conn.sendall(f"{OK}".encode())
-            file_name = conn.recv(1024).decode()
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
+            file_name = conn.recv(1024).decode('utf-8')
+            conn.sendall(f"{OK}".encode('utf-8'))
             bin = conn.recv(1024)
             with open(f"{self.replicated_bins_path}/{file_name}", 'wb') as file:
                 file.write(bin)
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
 
         elif data == f"{REPLICATE_DELETE_BIN}":
-            conn.sendall(f"{OK}".encode())
-            file_name = conn.recv(1024).decode()
+            conn.sendall(f"{OK}".encode('utf-8'))
+            file_name = conn.recv(1024).decode('utf-8')
             file_path = f"{self.replicated_bins_path}/{file_name}"
             os.remove(file_path)
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
 
 
 
         elif data == f"{PUSH_DATA}":
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
 
             # Receive and update tags
-            tags_json_str = conn.recv(1024).decode()
+            tags_json_str = conn.recv(1024).decode('utf-8')
             new_tags = json.loads(tags_json_str)
             self.tags.update(new_tags)
             self.save_tags()
 
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
 
             # Receive and update files
-            files_json_str = conn.recv(1024).decode()
+            files_json_str = conn.recv(1024).decode('utf-8')
             new_files = json.loads(files_json_str)
             self.files.update(new_files)
             self.save_files()
 
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
 
             # Receive and write bins
             recv_write_bins(conn, self.bins_path)
             
             # Send IP
-            ip = conn.recv(1024).decode()
+            ip = conn.recv(1024).decode('utf-8')
 
             # Let my sucessor know i have new data
             self.send_fetch_notification(ip)
@@ -542,17 +542,17 @@ class Database:
         elif data == f"{PULL_REPLICATION}":
             # Send tags
             tags_json_str = json.dumps(self.tags)
-            conn.sendall(tags_json_str.encode())
+            conn.sendall(tags_json_str.encode('utf-8'))
 
-            ack = conn.recv(1024).decode()
+            ack = conn.recv(1024).decode('utf-8')
             if ack != f"{OK}":
                 raise Exception("ACK negativo")
 
             # Send files
             files_json_str = json.dumps(self.files)
-            conn.sendall(files_json_str.encode())
+            conn.sendall(files_json_str.encode('utf-8'))
 
-            ack = conn.recv(1024).decode()
+            ack = conn.recv(1024).decode('utf-8')
             if ack != f"{OK}":
                 raise Exception("ACK negativo")
             
@@ -562,13 +562,13 @@ class Database:
 
         # Pull data to replicate
         elif data == f"{FETCH_REPLICA}":
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
 
-            ip = conn.recv(1024).decode()
+            ip = conn.recv(1024).decode('utf-8')
             
             self.pull_replication(ip)
 
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
 
 
 

@@ -58,7 +58,7 @@ class QueryNode(DataNode):
             s.sendall(packed_permission_request)
 
             # Wait permission
-            permission = s.recv(1024).decode()
+            permission = s.recv(1024).decode('utf-8')
             if permission != f"{OK}":
                 raise Exception(f"No permision was send, leader sent: {permission}")
             
@@ -66,7 +66,7 @@ class QueryNode(DataNode):
             callback()
 
             # Send END of operation
-            s.sendall(f"{END}".encode())
+            s.sendall(f"{END}".encode('utf-8'))
 
         return True
             
@@ -256,15 +256,15 @@ class QueryNode(DataNode):
     def handle_request(self, client_socket: socket.socket, client_addr):
         with client_socket:
             # Receive operation
-            operation = client_socket.recv(1024).decode()
+            operation = client_socket.recv(1024).decode('utf-8')
             
             print(f"[*] {client_addr[0]} requested {operation}")
 
             # Send ACK if operation is correct
             if operation in {'add', 'delete', 'list', 'add-tags', 'delete-tags', 'download', 'inspect-tag', 'inspect-file'}:
-                client_socket.sendall(f"{OK}".encode())
+                client_socket.sendall(f"{OK}".encode('utf-8'))
             else:
-                client_socket.sendall(f"Unrecognized operation: {operation}".encode())
+                client_socket.sendall(f"Unrecognized operation: {operation}".encode('utf-8'))
                 return
             
             response = {}
@@ -274,15 +274,15 @@ class QueryNode(DataNode):
                 files_bins = []
 
                 while True:
-                    file_name = client_socket.recv(1024).decode()
+                    file_name = client_socket.recv(1024).decode('utf-8')
                     if file_name == f"{END}":
                         break
                     
                     # Send file name received ACK
-                    client_socket.sendall(f"{OK}".encode())
+                    client_socket.sendall(f"{OK}".encode('utf-8'))
 
                     file_bin = b''
-                    end_file = f"{END_FILE}".encode()
+                    end_file = f"{END_FILE}".encode('utf-8')
                     while True:
                         fragment = client_socket.recv(1024)
                         if end_file in fragment:
@@ -292,85 +292,85 @@ class QueryNode(DataNode):
                             file_bin += fragment
                     
                     # Send file bin received ACK
-                    client_socket.sendall(f"{OK}".encode())
+                    client_socket.sendall(f"{OK}".encode('utf-8'))
 
                     files_names.append(file_name)
                     files_bins.append(file_bin)
 
-                client_socket.sendall(f"{OK}".encode())
+                client_socket.sendall(f"{OK}".encode('utf-8'))
 
-                tags = client_socket.recv(1024).decode().split(';')
+                tags = client_socket.recv(1024).decode('utf-8').split(';')
 
                 response = self._query_add(files_names, files_bins, tags)
 
 
             elif operation == 'delete':
-                query_tags = client_socket.recv(1024).decode().split(';')
+                query_tags = client_socket.recv(1024).decode('utf-8').split(';')
                 response = self._query_delete(query_tags)
             
 
             elif operation == 'list':
-                query_tags = client_socket.recv(1024).decode().split(';')
+                query_tags = client_socket.recv(1024).decode('utf-8').split(';')
                 response = self._query_list(query_tags)
 
 
             elif operation == 'add-tags':
-                query_tags = client_socket.recv(1024).decode().split(';')
-                client_socket.sendall(f"{OK}".encode())
+                query_tags = client_socket.recv(1024).decode('utf-8').split(';')
+                client_socket.sendall(f"{OK}".encode('utf-8'))
 
-                tags = client_socket.recv(1024).decode().split(';')
+                tags = client_socket.recv(1024).decode('utf-8').split(';')
 
                 response = self._query_add_tags(query_tags, tags)
 
 
             elif operation == 'delete-tags':
-                query_tags = client_socket.recv(1024).decode().split(';')
-                client_socket.sendall(f"{OK}".encode())
+                query_tags = client_socket.recv(1024).decode('utf-8').split(';')
+                client_socket.sendall(f"{OK}".encode('utf-8'))
 
-                tags = client_socket.recv(1024).decode().split(';')
+                tags = client_socket.recv(1024).decode('utf-8').split(';')
 
                 response = self._query_delete_tags(query_tags, tags)
             
 
             elif operation == 'download':
-                query_tags = client_socket.recv(1024).decode().split(';')
+                query_tags = client_socket.recv(1024).decode('utf-8').split(';')
                 file_resp = self._query_download(query_tags)
                 file_names = file_resp['files_name']
                 file_bins = file_resp['bins']
 
                 for i in range(len(file_names)):
-                    client_socket.sendall(file_names[i].encode())
+                    client_socket.sendall(file_names[i].encode('utf-8'))
 
-                    ack = client_socket.recv(1024).decode()
+                    ack = client_socket.recv(1024).decode('utf-8')
                     if ack != f"{OK}": raise Exception("Negative ACK")
 
                     client_socket.sendall(file_bins[i])
-                    client_socket.sendall(f"{END_FILE}".encode())
+                    client_socket.sendall(f"{END_FILE}".encode('utf-8'))
 
-                    ack = client_socket.recv(1024).decode()
+                    ack = client_socket.recv(1024).decode('utf-8')
                     if ack != f"{OK}": raise Exception("Negative ACK")
 
-                client_socket.sendall(f"{END}".encode())
+                client_socket.sendall(f"{END}".encode('utf-8'))
 
                 # Wait for OK
-                ack = client_socket.recv(1024).decode()
+                ack = client_socket.recv(1024).decode('utf-8')
                 if ack != f"{OK}": raise Exception("Negative ACK")
                 
                 return
 
 
             elif operation == 'inspect-tag':
-                tag = client_socket.recv(1024).decode()
+                tag = client_socket.recv(1024).decode('utf-8')
                 response = self._inspect_tag(tag)
 
 
             elif operation == 'inspect-file':
-                file_name = client_socket.recv(1024).decode()
+                file_name = client_socket.recv(1024).decode('utf-8')
                 response = self._inspect_file(file_name)
 
 
             response_str = json.dumps(response)
-            client_socket.sendall(str(response_str).encode())
+            client_socket.sendall(str(response_str).encode('utf-8'))
 
 
     def _pack_permission_request(self, tags: list[str], files_names: list[str], query_tags: list[str]) -> bytes:
@@ -378,7 +378,7 @@ class QueryNode(DataNode):
         data['tags'] = tags
         data['files'] = files_names
         data['query_tags'] = query_tags
-        return json.dumps(data).encode()
+        return json.dumps(data).encode('utf-8')
 
 
 

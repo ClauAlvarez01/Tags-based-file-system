@@ -267,12 +267,12 @@ class DataNode(ChordNode):
 
 
         elif option == INSERT_BIN:
-            conn.sendall(f"{OK}".encode())
-            file_name = conn.recv(1024).decode()
-            conn.sendall(f"{OK}".encode())
+            conn.sendall(f"{OK}".encode('utf-8'))
+            file_name = conn.recv(1024).decode('utf-8')
+            conn.sendall(f"{OK}".encode('utf-8'))
 
             bin = b''
-            end_file = f"{END_FILE}".encode()
+            end_file = f"{END_FILE}".encode('utf-8')
             while True:
                 fragment = conn.recv(1024)
                 if end_file in fragment:
@@ -281,7 +281,7 @@ class DataNode(ChordNode):
                 bin += fragment
 
             response = self.handle_insert_bin(file_name, bin)
-            conn.sendall(response.encode())
+            conn.sendall(response.encode('utf-8'))
 
 
         elif option == DELETE_BIN:
@@ -293,12 +293,12 @@ class DataNode(ChordNode):
             file_bin = self.database.retrieve_bin(file_name)
 
             conn.sendall(file_bin)
-            conn.sendall(f"{END_FILE}".encode())
+            conn.sendall(f"{END_FILE}".encode('utf-8'))
 
 
 
         if response:
-            response = response.encode()
+            response = response.encode('utf-8')
             conn.sendall(response)
         conn.close()
 
@@ -311,7 +311,7 @@ class DataNode(ChordNode):
 
             while True:
                 conn, addr = s.accept()
-                data = conn.recv(1024).decode().split(',')
+                data = conn.recv(1024).decode('utf-8').split(',')
 
                 threading.Thread(target=self.request_data_handler, args=(conn, addr, data)).start()
 

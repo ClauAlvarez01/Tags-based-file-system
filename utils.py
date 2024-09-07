@@ -5,7 +5,7 @@ from typing import Dict, List
 
 # Function to hash a string using SHA-1 and return its integer representation
 def getShaRepr(data: str):
-    return int(hashlib.sha1(data.encode()).hexdigest(), 16)
+    return int(hashlib.sha1(data.encode('utf-8')).hexdigest(), 16)
 
 # Function to check if n id is between two other id's in chord ring
 def inbetween(k: int, start: int, end: int) -> bool:
@@ -19,15 +19,15 @@ def send_2(first_msg: str, second_msg: str, target_ip: str, target_port: int):
         """Sends two messages to target ip, always waiting for OK ack"""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((target_ip, target_port))
-            s.sendall(first_msg.encode())
+            s.sendall(first_msg.encode('utf-8'))
         
-            ack = s.recv(1024).decode()
+            ack = s.recv(1024).decode('utf-8')
             if ack != f"{OK}":
                 raise Exception("ACK negativo")
             
-            s.sendall(second_msg.encode())
+            s.sendall(second_msg.encode('utf-8'))
             
-            ack = s.recv(1024).decode()
+            ack = s.recv(1024).decode('utf-8')
             if ack != f"{OK}":
                 raise Exception("ACK negativo")
 
@@ -38,20 +38,20 @@ def send_bin(op: str, file_name: str, bin: bytes, target_ip: str, target_port: i
 
         s.sendall(op.encode('utf-8'))
 
-        ack = s.recv(1024).decode()
+        ack = s.recv(1024).decode('utf-8')
         if ack != f"{OK}":
             raise Exception("ACK negativo")
         
         s.sendall(file_name.encode('utf-8'))
 
-        ack = s.recv(1024).decode()
+        ack = s.recv(1024).decode('utf-8')
         if ack != f"{OK}":
             raise Exception("ACK negativo")
         
         s.sendall(bin)
 
         if end_msg:
-            s.sendall(f"{END_FILE}".encode())
+            s.sendall(f"{END_FILE}".encode('utf-8'))
 
         return s.recv(1024)
     
@@ -60,9 +60,9 @@ def send_bins(s: socket.socket, files_to_send: dict, path: str):
     for k, _ in files_to_send.items():
         file_path = f"{path}/{k}"
 
-        s.sendall(k.encode())
+        s.sendall(k.encode('utf-8'))
 
-        ack = s.recv(1024).decode()
+        ack = s.recv(1024).decode('utf-8')
         if ack != f"{OK}":
             raise Exception("ACK negativo")
 
@@ -74,20 +74,20 @@ def send_bins(s: socket.socket, files_to_send: dict, path: str):
                     break
                 s.sendall(data)
             
-                ack = s.recv(1024).decode()
+                ack = s.recv(1024).decode('utf-8')
                 if ack != f"{OK}":
                     raise Exception("ACK negativo")
         
-            s.sendall(f"{END_FILE}".encode())
+            s.sendall(f"{END_FILE}".encode('utf-8'))
 
-            ack = s.recv(1024).decode()
+            ack = s.recv(1024).decode('utf-8')
             if ack != f"{OK}":
                 raise Exception("ACK negativo")
 
 
-    s.sendall(f"{END}".encode())
+    s.sendall(f"{END}".encode('utf-8'))
 
-    ack = s.recv(1024).decode()
+    ack = s.recv(1024).decode('utf-8')
     if ack != f"{OK}":
         raise Exception("ACK negativo")
     
@@ -95,16 +95,16 @@ def send_bins(s: socket.socket, files_to_send: dict, path: str):
 def recv_write_bins(s: socket.socket, dest_dir: str):
     while True:
         data = s.recv(1024)
-        if data.decode() == f"{END}":
+        if data.decode('utf-8') == f"{END}":
             break
 
-        file_name = data.decode()
-        s.sendall(f"{OK}".encode())
+        file_name = data.decode('utf-8')
+        s.sendall(f"{OK}".encode('utf-8'))
 
         file_content = []
         while True:
             data = s.recv(1024)
-            if data.decode() == f"{END_FILE}":
+            if data.decode('utf-8') == f"{END_FILE}":
                 file_bin = b''.join(file_content)
 
                 # Save file binary
@@ -114,8 +114,8 @@ def recv_write_bins(s: socket.socket, dest_dir: str):
                 file_content = []
                 break
             file_content.append(data)
-            s.sendall(f"{OK}".encode())
+            s.sendall(f"{OK}".encode('utf-8'))
 
-        s.sendall(f"{OK}".encode())
+        s.sendall(f"{OK}".encode('utf-8'))
         
-    s.sendall(f"{OK}".encode())
+    s.sendall(f"{OK}".encode('utf-8'))

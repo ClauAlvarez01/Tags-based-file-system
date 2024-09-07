@@ -31,7 +31,7 @@ class SelfDiscovery:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
-        sock.sendto(message.encode(), ('255.255.255.255', DEFAULT_BROADCAST_PORT))
+        sock.sendto(message.encode('utf-8'), ('255.255.255.255', DEFAULT_BROADCAST_PORT))
         print(f"[{SELF_DISC_SYMBOL}] Broadcasted DISCOVERY")
 
 
@@ -48,7 +48,7 @@ class SelfDiscovery:
                 if addr[0] == self.ip:
                     continue
 
-                data = conn.recv(1024).decode().split(',')
+                data = conn.recv(1024).decode('utf-8').split(',')
                 option = int(data[0])
 
                 if option == ENTRY_POINT:
