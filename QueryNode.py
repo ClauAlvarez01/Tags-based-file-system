@@ -23,9 +23,33 @@ class QueryNode(DataNode):
 
 
     def _request_with_permission(self, tags, files_names, query_tags, callback):
-        leader_ip = self.election.get_leader()
+
+        in_election = False if self.election.leader else True
+
+        # Check leader is alive
+        if not in_election:
+            leader_ref = ChordNodeReference(self.election.leader)
+            if not leader_ref.check_node():
+                self.election.leader_lost()
+                in_election = True
+
+        # Wait up to 10 seconds for leader election
+        wait_time = 10
+        while in_election:
+            if wait_time == 0:
+                print("[*] Request waiting for leader election to continue")
+
+            in_election = False if self.election.leader else True
+            time.sleep(1)
+            wait_time -= 1
+            if wait_time == 0:
+                return False
+            
+        
+        leader_ip = self.election.leader
         leader_port = DEFAULT_LEADER_PORT
 
+        # Send request
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((leader_ip, leader_port))
             
@@ -43,6 +67,8 @@ class QueryNode(DataNode):
 
             # Send END of operation
             s.sendall(f"{END}".encode())
+
+        return True
             
 
 
@@ -69,7 +95,9 @@ class QueryNode(DataNode):
                 else:
                     response['succeded'].append(file_name)
         
-        self._request_with_permission(tags, files_names, [], callback=callback_func)
+        success = self._request_with_permission(tags, files_names, [], callback=callback_func)
+        if not success:
+            response['msg'] = "Failed to send request"
         return response
 
 
@@ -94,7 +122,9 @@ class QueryNode(DataNode):
                 else:
                     response['succeded'].append(file)
 
-        self._request_with_permission([], [], query_tags, callback=callback_func)
+        success = self._request_with_permission([], [], query_tags, callback=callback_func)
+        if not success:
+            response['msg'] = "Failed to send request"
         return response
 
 
@@ -113,8 +143,10 @@ class QueryNode(DataNode):
                 response['files_name'].append(file)
                 response['tags'].append(tags)
 
-        self._request_with_permission([], [], query_tags, callback=callback_func)
+        success = self._request_with_permission([], [], query_tags, callback=callback_func)
         response['msg'] = f"{len(response['files_name'])} files retrieved"
+        if not success:
+            response['msg'] = "Failed to send request"
         return response
 
 
@@ -139,7 +171,9 @@ class QueryNode(DataNode):
                 else:
                     response['succeded'].append(file)
 
-        self._request_with_permission(tags, [], query_tags, callback=callback_func)
+        success = self._request_with_permission(tags, [], query_tags, callback=callback_func)
+        if not success:
+            response['msg'] = "Failed to send request"
         return response
 
 
@@ -164,7 +198,9 @@ class QueryNode(DataNode):
                 else:
                     response['succeded'].append(file)
 
-        self._request_with_permission(tags, [], query_tags, callback=callback_func)
+        success = self._request_with_permission(tags, [], query_tags, callback=callback_func)
+        if not success:
+            response['msg'] = "Failed to send request"
         return response
 
 
@@ -180,7 +216,9 @@ class QueryNode(DataNode):
                 bin = self.download(file_name)
                 response['bins'].append(bin)
 
-        self._request_with_permission([], [], query_tags, callback=callback_func)
+        success = self._request_with_permission([], [], query_tags, callback=callback_func)
+        if not success:
+            response['msg'] = "Failed to send request"
         return response
 
 
@@ -217,10 +255,10 @@ class QueryNode(DataNode):
 
     def handle_request(self, client_socket: socket.socket, client_addr):
         with client_socket:
-            print(f"Request by {client_addr}")
-            
             # Receive operation
             operation = client_socket.recv(1024).decode()
+            
+            print(f"[*] {client_addr[0]} requested {operation}")
 
             # Send ACK if operation is correct
             if operation in {'add', 'delete', 'list', 'add-tags', 'delete-tags', 'download', 'inspect-tag', 'inspect-file'}:

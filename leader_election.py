@@ -27,9 +27,6 @@ class LeaderElection:
         print("[🔷] Leader lost")
         self.leader = None
 
-    def get_leader(self):
-        return self.leader
-    
     def adopt_leader(self, leader: str):      # for recently joining nodes
         self.leader = leader
         if self.leader == self.id:
