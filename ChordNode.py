@@ -41,10 +41,10 @@ class ChordNode:
     def _leader_checker(self):
         while True:
             time.sleep(10)
-            leader_node = ChordNodeReference(self.election.get_leader())
-            if not leader_node.check_node()  and not self.election.in_election:
-                print("[🔷] Leader lost")
-                self.election.leader_lost()
+            if not self.election.in_election:
+                leader_node = ChordNodeReference(self.election.get_leader())
+                if not leader_node.check_node() and not self.election.in_election:
+                    self.election.leader_lost()
 
     
 
