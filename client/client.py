@@ -165,48 +165,51 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 
                 tags = params[1]
 
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.connect((self.target_ip, self.target_port))
+                try:
 
-                    # Send operation
-                    s.sendall('add'.encode())
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.connect((self.target_ip, self.target_port))
 
-                    # Wait for OK
-                    ack = s.recv(1024).decode()
-                    if ack != f"{OK}": raise Exception("Negative ACK")
-
-                    # Send each file
-                    for i in range(len(files_name)):
-                        # Send name
-                        s.sendall(files_name[i].encode())
+                        # Send operation
+                        s.sendall('add'.encode())
 
                         # Wait for OK
                         ack = s.recv(1024).decode()
                         if ack != f"{OK}": raise Exception("Negative ACK")
 
-                        # Send bin and END_FILE
-                        s.sendall(files_bin[i])
-                        s.sendall(f"{END_FILE}".encode())
+                        # Send each file
+                        for i in range(len(files_name)):
+                            # Send name
+                            s.sendall(files_name[i].encode())
+
+                            # Wait for OK
+                            ack = s.recv(1024).decode()
+                            if ack != f"{OK}": raise Exception("Negative ACK")
+
+                            # Send bin and END_FILE
+                            s.sendall(files_bin[i])
+                            s.sendall(f"{END_FILE}".encode())
+
+                            # Wait for OK
+                            ack = s.recv(1024).decode()
+                            if ack != f"{OK}": raise Exception("Negative ACK")
+
+                        s.sendall(f"{END}".encode())
 
                         # Wait for OK
                         ack = s.recv(1024).decode()
                         if ack != f"{OK}": raise Exception("Negative ACK")
 
-                    s.sendall(f"{END}".encode())
+                        # Send tags
+                        s.sendall(tags.encode())
 
-                    # Wait for OK
-                    ack = s.recv(1024).decode()
-                    if ack != f"{OK}": raise Exception("Negative ACK")
-
-                    # Send tags
-                    s.sendall(tags.encode())
-
-                    # Wait response
-                    response = s.recv(1024).decode()
-                    response = json.loads(response)
-                    s.close()
-                    self.show_results(response)
-
+                        # Wait response
+                        response = s.recv(1024).decode()
+                        response = json.loads(response)
+                        s.close()
+                        self.show_results(response)
+                except:
+                    self.display_error("The operation could not be completed successfully.")
 
 
             elif cmd == "delete":
@@ -216,24 +219,27 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 
                 tags_query = params[0]
 
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.connect((self.target_ip, self.target_port))
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.connect((self.target_ip, self.target_port))
 
-                    # Send operation
-                    s.sendall('delete'.encode())
+                        # Send operation
+                        s.sendall('delete'.encode())
 
-                    # Wait for OK
-                    ack = s.recv(1024).decode()
-                    if ack != f"{OK}": raise Exception("Negative ACK")
+                        # Wait for OK
+                        ack = s.recv(1024).decode()
+                        if ack != f"{OK}": raise Exception("Negative ACK")
 
-                    # Send query tags
-                    s.sendall(tags_query.encode())
+                        # Send query tags
+                        s.sendall(tags_query.encode())
 
-                    # Wait response
-                    response = s.recv(1024).decode()
-                    response = json.loads(response)
-                    s.close()
-                    self.show_results(response)
+                        # Wait response
+                        response = s.recv(1024).decode()
+                        response = json.loads(response)
+                        s.close()
+                        self.show_results(response)
+                except:
+                    self.display_error("The operation could not be completed successfully.")
 
             
             elif cmd == "list":
@@ -243,24 +249,27 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 
                 tags_query = params[0]
                 
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.connect((self.target_ip, self.target_port))
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.connect((self.target_ip, self.target_port))
 
-                    # Send operation
-                    s.sendall('list'.encode())
+                        # Send operation
+                        s.sendall('list'.encode())
 
-                    # Wait for OK
-                    ack = s.recv(1024).decode()
-                    if ack != f"{OK}": raise Exception("Negative ACK")
+                        # Wait for OK
+                        ack = s.recv(1024).decode()
+                        if ack != f"{OK}": raise Exception("Negative ACK")
 
-                    # Send query tags
-                    s.sendall(tags_query.encode())
+                        # Send query tags
+                        s.sendall(tags_query.encode())
 
-                    # Wait response
-                    response = s.recv(1024).decode()
-                    response = json.loads(response)
-                    s.close()
-                    self.show_list(response)
+                        # Wait response
+                        response = s.recv(1024).decode()
+                        response = json.loads(response)
+                        s.close()
+                        self.show_list(response)
+                except:
+                    self.display_error("The operation could not be completed successfully.")
 
 
             elif cmd == "add-tags":
@@ -271,31 +280,34 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                 tags_query = params[0]
                 tags = params[1]
 
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.connect((self.target_ip, self.target_port))
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.connect((self.target_ip, self.target_port))
 
-                    # Send operation
-                    s.sendall('add-tags'.encode())
+                        # Send operation
+                        s.sendall('add-tags'.encode())
 
-                    # Wait for OK
-                    ack = s.recv(1024).decode()
-                    if ack != f"{OK}": raise Exception("Negative ACK")
+                        # Wait for OK
+                        ack = s.recv(1024).decode()
+                        if ack != f"{OK}": raise Exception("Negative ACK")
 
-                    # Send query tags
-                    s.sendall(tags_query.encode())
+                        # Send query tags
+                        s.sendall(tags_query.encode())
 
-                    # Wait for OK
-                    ack = s.recv(1024).decode()
-                    if ack != f"{OK}": raise Exception("Negative ACK")
+                        # Wait for OK
+                        ack = s.recv(1024).decode()
+                        if ack != f"{OK}": raise Exception("Negative ACK")
 
-                    # Send tags
-                    s.sendall(tags.encode())
+                        # Send tags
+                        s.sendall(tags.encode())
 
-                    # Wait response
-                    response = s.recv(1024).decode()
-                    response = json.loads(response)
-                    s.close()
-                    self.show_results(response)
+                        # Wait response
+                        response = s.recv(1024).decode()
+                        response = json.loads(response)
+                        s.close()
+                        self.show_results(response)
+                except:
+                    self.display_error("The operation could not be completed successfully.")
 
 
             elif cmd == "delete-tags":
@@ -306,31 +318,34 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                 tags_query = params[0]
                 tags = params[1]
 
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.connect((self.target_ip, self.target_port))
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.connect((self.target_ip, self.target_port))
 
-                    # Send operation
-                    s.sendall('delete-tags'.encode())
+                        # Send operation
+                        s.sendall('delete-tags'.encode())
 
-                    # Wait for OK
-                    ack = s.recv(1024).decode()
-                    if ack != f"{OK}": raise Exception("Negative ACK")
+                        # Wait for OK
+                        ack = s.recv(1024).decode()
+                        if ack != f"{OK}": raise Exception("Negative ACK")
 
-                    # Send query tags
-                    s.sendall(tags_query.encode())
+                        # Send query tags
+                        s.sendall(tags_query.encode())
 
-                    # Wait for OK
-                    ack = s.recv(1024).decode()
-                    if ack != f"{OK}": raise Exception("Negative ACK")
+                        # Wait for OK
+                        ack = s.recv(1024).decode()
+                        if ack != f"{OK}": raise Exception("Negative ACK")
 
-                    # Send tags
-                    s.sendall(tags.encode())
+                        # Send tags
+                        s.sendall(tags.encode())
 
-                    # Wait response
-                    response = s.recv(1024).decode()
-                    response = json.loads(response)
-                    s.close()
-                    self.show_results(response)
+                        # Wait response
+                        response = s.recv(1024).decode()
+                        response = json.loads(response)
+                        s.close()
+                        self.show_results(response)
+                except:
+                    self.display_error("The operation could not be completed successfully.")
 
 
             elif cmd == 'download':
@@ -340,49 +355,52 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 
                 tags_query = params[0]
                 
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.connect((self.target_ip, self.target_port))
-                    print("Downloading...")
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.connect((self.target_ip, self.target_port))
+                        print("Downloading...")
 
-                    # Send operation
-                    s.sendall('download'.encode())
+                        # Send operation
+                        s.sendall('download'.encode())
 
-                    # Wait for OK
-                    ack = s.recv(1024).decode()
-                    if ack != f"{OK}": raise Exception("Negative ACK")
+                        # Wait for OK
+                        ack = s.recv(1024).decode()
+                        if ack != f"{OK}": raise Exception("Negative ACK")
 
-                    # Send query tags
-                    s.sendall(tags_query.encode())
+                        # Send query tags
+                        s.sendall(tags_query.encode())
 
-                    # Wait response
-                    while True:
-                        file_name = s.recv(1024).decode()
-                        if file_name == f"{END}":
-                            break
-                    
-                        # Send file name received ACK
-                        s.sendall(f"{OK}".encode())
-
-                        file_content = b''
-                        end_file = f"{END_FILE}".encode()
+                        # Wait response
                         while True:
-                            fragment = s.recv(1024)
-                            if end_file in fragment:
-                                file_content += fragment.split(end_file)[0]
+                            file_name = s.recv(1024).decode()
+                            if file_name == f"{END}":
                                 break
-                            else:
-                                file_content += fragment
-                    
-                        # Send file bin received ACK
+                        
+                            # Send file name received ACK
+                            s.sendall(f"{OK}".encode())
+
+                            file_content = b''
+                            end_file = f"{END_FILE}".encode()
+                            while True:
+                                fragment = s.recv(1024)
+                                if end_file in fragment:
+                                    file_content += fragment.split(end_file)[0]
+                                    break
+                                else:
+                                    file_content += fragment
+                        
+                            # Send file bin received ACK
+                            s.sendall(f"{OK}".encode())
+
+                            #Guardar archivos en txt 
+                            self.save_file(file_name, file_content)
+
+
+                        print(f"{bcolors.OKGREEN}Download completed{bcolors.ENDC}")
                         s.sendall(f"{OK}".encode())
-
-                        #Guardar archivos en txt 
-                        self.save_file(file_name, file_content)
-
-
-                    print(f"{bcolors.OKGREEN}Download completed{bcolors.ENDC}")
-                    s.sendall(f"{OK}".encode())
-                    s.close()
+                        s.close()
+                except:
+                    self.display_error("The operation could not be completed")
 
 
             elif cmd == 'inspect-tag':
@@ -398,24 +416,27 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                 
                 tag: str = tag[0]
 
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.connect((self.target_ip, self.target_port))
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.connect((self.target_ip, self.target_port))
 
-                    # Send operation
-                    s.sendall('inspect-tag'.encode())
+                        # Send operation
+                        s.sendall('inspect-tag'.encode())
 
-                    # Wait for OK
-                    ack = s.recv(1024).decode()
-                    if ack != f"{OK}": raise Exception("Negative ACK")
+                        # Wait for OK
+                        ack = s.recv(1024).decode()
+                        if ack != f"{OK}": raise Exception("Negative ACK")
 
-                    # Send tag
-                    s.sendall(tag.encode())
+                        # Send tag
+                        s.sendall(tag.encode())
 
-                    # Wait response
-                    response = s.recv(1024).decode()
-                    response = json.loads(response)
-                    s.close()
-                    self.show_tag_file_relationship(response, 'files_by_tag')
+                        # Wait response
+                        response = s.recv(1024).decode()
+                        response = json.loads(response)
+                        s.close()
+                        self.show_tag_file_relationship(response, 'files_by_tag')
+                except:
+                    self.display_error("The operation could not be completed successfully.")
 
 
             elif cmd == 'inspect-file':
@@ -431,24 +452,28 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                 
                 file_name: str = file_name[0]
 
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.connect((self.target_ip, self.target_port))
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.connect((self.target_ip, self.target_port))
 
-                    # Send operation
-                    s.sendall('inspect-file'.encode())
+                        # Send operation
+                        s.sendall('inspect-file'.encode())
 
-                    # Wait for OK
-                    ack = s.recv(1024).decode()
-                    if ack != f"{OK}": raise Exception("Negative ACK")
+                        # Wait for OK
+                        ack = s.recv(1024).decode()
+                        if ack != f"{OK}": raise Exception("Negative ACK")
 
-                    # Send tag
-                    s.sendall(file_name.encode())
+                        # Send tag
+                        s.sendall(file_name.encode())
 
-                    # Wait response
-                    response = s.recv(1024).decode()
-                    response = json.loads(response)
-                    s.close()
-                    self.show_tag_file_relationship(response, 'tags_by_file')
+                        # Wait response
+                        response = s.recv(1024).decode()
+                        response = json.loads(response)
+                        s.close()
+                        self.show_tag_file_relationship(response, 'tags_by_file')
+                except:
+                    self.display_error("The operation could not be completed successfully.")
+
 
 
             else:
