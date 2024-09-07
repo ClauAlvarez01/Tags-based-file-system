@@ -1,4 +1,5 @@
 import os
+import shutil
 import socket
 import threading
 import json
@@ -29,62 +30,49 @@ class Database:
         self.bins_path = f"{self.dir_path}/bins"
         self.replicated_bins_path = f"{self.dir_path}/replicated_bins"
 
-        # Load saved data
-        self.load_data()
+        # Prepare storage
+        self.set_up_storage()
 
         threading.Thread(target=self._recv, daemon=True).start()
 
 
 
-    def load_data(self):
-        print("[💾] Loading data...")
+    def set_up_storage(self):
+        print("[💾] Setting up storage...")
 
         # Create all empty files if they dont exist
         if not os.path.exists(self.dir_path):            
             os.makedirs(self.dir_path)
 
-        if not os.path.isfile(self.tags_path):
-            with open(self.tags_path, 'w') as json_file:
-                json.dump(self.tags, json_file, indent=4)
+        if os.path.isfile(self.tags_path):
+            os.remove(self.tags_path)
+        with open(self.tags_path, 'w') as json_file:
+            json.dump(self.tags, json_file, indent=4)
         
-        if not os.path.isfile(self.files_path):
-            with open(self.files_path, 'w') as json_file:
-                json.dump(self.files, json_file, indent=4)
+        if os.path.isfile(self.files_path):
+            os.remove(self.files_path)
+        with open(self.files_path, 'w') as json_file:
+            json.dump(self.files, json_file, indent=4)
 
-        if not os.path.isfile(self.replicated_tags_path):
-            with open(self.replicated_tags_path, 'w') as json_file:
-                json.dump(self.replicated_tags, json_file, indent=4)
+        if os.path.isfile(self.replicated_tags_path):
+            os.remove(self.replicated_tags_path)
+        with open(self.replicated_tags_path, 'w') as json_file:
+            json.dump(self.replicated_tags, json_file, indent=4)
         
-        if not os.path.isfile(self.replicated_files_path):
-            with open(self.replicated_files_path, 'w') as json_file:
-                json.dump(self.replicated_files, json_file, indent=4)
+        if os.path.isfile(self.replicated_files_path):  
+            os.remove(self.replicated_files_path)
+        with open(self.replicated_files_path, 'w') as json_file:
+            json.dump(self.replicated_files, json_file, indent=4)
 
-        if not os.path.exists(self.bins_path):
-            os.makedirs(self.bins_path)
-
-        if not os.path.exists(self.replicated_bins_path):
-            os.makedirs(self.replicated_bins_path)
-
+        if os.path.exists(self.bins_path):
+            shutil.rmtree(self.bins_path)
+        os.makedirs(self.bins_path)
         
-        # Load data from files
-        with open(self.tags_path, 'r') as json_file:
-            stored_tags = json.load(json_file)
-            self.tags.update(stored_tags)
+        if os.path.exists(self.replicated_bins_path):
+            shutil.rmtree(self.replicated_bins_path)
+        os.makedirs(self.replicated_bins_path)
 
-        with open(self.files_path, 'r') as json_file:
-            stored_files = json.load(json_file)
-            self.files.update(stored_files)
-
-        with open(self.replicated_tags_path, 'r') as json_file:
-            stored_replicated_tags = json.load(json_file)
-            self.replicated_tags.update(stored_replicated_tags)
-
-        with open(self.replicated_files_path, 'r') as json_file:
-            stored_replicated_files = json.load(json_file)
-            self.replicated_files.update(stored_replicated_files)
-
-
-        print("[💾] Data loaded successfully")
+        print("[💾] Successfull set up")
 
 
 
