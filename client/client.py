@@ -49,8 +49,12 @@ class SelfDiscovery:
 
         self._send(f'{DISCOVER},{self.ip},{self.port}')
 
+        wait_time = 12 # 3 seconds
         while not self.target_ip:
             time.sleep(0.25)
+            wait_time -= 1
+            if wait_time == 0:
+                raise Exception("Timeout: Looks like there is no Chord Node in this network")
         
         print(f"[{SELF_DISC_SYMBOL}] discovered {self.target_ip}")
         return self.target_ip
@@ -94,9 +98,9 @@ class SelfDiscovery:
 
 
 class Client:
-    def __init__(self, target_ip=None, target_port=None):
-        self.target_ip = target_ip if target_ip else '172.17.0.2'
-        self.target_port = target_port if target_port else 8003
+    def __init__(self, target_ip=None, target_port=8003):
+        self.target_ip = target_ip
+        self.target_port = target_port
 
         self.downloads_path = 'client/downloads'
 
