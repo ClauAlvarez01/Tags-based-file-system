@@ -408,13 +408,11 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                     self.display_error(f"'inspect-tag' command require 1 param but {len(params)} were given")
                     continue
 
-                tag = params[0]
+                tag: str = params[0]
 
-                if len(tag) != 1: 
+                if len([tag]) != 1: 
                     self.display_error(f"'inspect-tag' command is only valid for retrieving file names for a specific tag")
                     continue
-                
-                tag: str = tag[0]
 
                 try:
                     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -444,14 +442,12 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                     self.display_error(f"'inspect-file' command require 1 param but {len(params)} were given")
                     continue
 
-                file_name = params[0]
+                file_name: str = params[0]
 
-                if len(file_name) != 1: 
+                if len([file_name]) != 1: 
                     self.display_error(f"'inspect-file' command is only valid for retrieving tags for a specific file name")
                     continue
                 
-                file_name: str = file_name[0]
-
                 try:
                     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         s.connect((self.target_ip, self.target_port))
@@ -558,7 +554,7 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 
         elif mode == 'tags_by_file':
             file_name: str = data['file_name']
-            tags: list = data['tags']
+            tags: list[str] = data['tags']
 
             if not tags:
                 print(f"{bcolors.WARNING}No tags found for the file '{file_name}'.{bcolors.ENDC}")

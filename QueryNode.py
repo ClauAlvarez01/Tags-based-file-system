@@ -222,20 +222,36 @@ class QueryNode(DataNode):
         return response
 
 
-    def _inspect_tag(self, tag: str):
+    def _query_inspect_tag(self, tag: str):
         response: dict = {}
         response['file_names'] = []
-        response['tag'] = 'tag'
+        response['tag'] = tag
 
-        pass
+        def callback_func():
+            files_by_tag = self.tag_query([tag])
+            response['file_names'] = files_by_tag
+        
+        success = self._request_with_permission([tag], [], [], callback=callback_func)
+        response ['msg'] = f"{len(response['file_names'])} files retrieved"
+        if not success:
+            response ['msg'] = "Failed to send request"
+        return response
 
 
-    def _inspect_file(self, file_name: str):
+    def _query_inspect_file(self, file_name: str):
         response: dict = {}
         response['file_name'] = file_name
-        response['tag'] = []
+        response['tags'] = []
 
-        pass
+        def callback_func():
+            tags_by_file = self.inspect(file_name)
+            response['tags'] = tags_by_file
+        
+        success = self._request_with_permission([], [file_name], [], callback=callback_func)
+        response ['msg'] = f"{len(response['tags'])} files retrieved"
+        if not success:
+            response ['msg'] = "Failed to send request"
+        return response
 
 
 
@@ -361,12 +377,12 @@ class QueryNode(DataNode):
 
             elif operation == 'inspect-tag':
                 tag = client_socket.recv(1024).decode('utf-8')
-                response = self._inspect_tag(tag)
+                response = self._query_inspect_tag(tag)
 
 
             elif operation == 'inspect-file':
                 file_name = client_socket.recv(1024).decode('utf-8')
-                response = self._inspect_file(file_name)
+                response = self._query_inspect_file(file_name)
 
 
             response_str = json.dumps(response)
