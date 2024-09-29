@@ -44,8 +44,8 @@ class SelfDiscovery:
         threading.Thread(target=self._recv, daemon=True).start()
 
     
-    def find(self) -> str:
-        print(f"[{SELF_DISC_SYMBOL}] Self Discovery started")
+    def find(self, verbose=True) -> str:
+        if verbose: print(f"[{SELF_DISC_SYMBOL}] Self Discovery started")
 
         self._send(f'{DISCOVER},{self.ip},{self.port}')
 
@@ -56,7 +56,7 @@ class SelfDiscovery:
             if wait_time == 0:
                 raise Exception("Timeout: Looks like there is no Chord Node in this network")
         
-        print(f"[{SELF_DISC_SYMBOL}] discovered {self.target_ip}")
+        if verbose: print(f"[{SELF_DISC_SYMBOL}] discovered {self.target_ip}")
         return self.target_ip
         
 
@@ -98,12 +98,17 @@ class SelfDiscovery:
 
 
 class Client:
-    def __init__(self, target_ip=None, target_port=8003):
+    def __init__(self, self_disc_obj, target_ip=None, target_port=8003):
+        self.ip = socket.gethostbyname(socket.gethostname())
+        self.self_disc_object = self_disc_obj
+
         self.target_ip = target_ip
         self.target_port = target_port
 
         self.downloads_path = 'client/downloads'
 
+        self.retry = False
+        self.retry_cmd = ""
         self.start()
 
     
@@ -131,13 +136,19 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
         
 
         while True:
-            user_input = input(bcolors.OKBLUE + "> " + bcolors.ENDC)
+            # Retry or get input from keyboard
+            if self.retry:
+                user_input_str = self.retry_cmd
+                self.retry = False
+                self.retry_cmd = ""
+            else:
+                user_input_str = input(bcolors.OKBLUE + "> " + bcolors.ENDC)
 
-            if ',' in user_input:
+            if ',' in user_input_str:
                 self.display_error("Error: No comma allowed in files name or tags")
                 continue
 
-            user_input = user_input.split(" ")
+            user_input = user_input_str.split(" ")
             user_input = [x for x in user_input if x != ""]
 
             if len(user_input) == 0:
@@ -208,8 +219,12 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         response = json.loads(response)
                         s.close()
                         self.show_results(response)
-                except:
-                    self.display_error("The operation could not be completed successfully.")
+                except Exception as e:
+                    if isinstance(e, ConnectionRefusedError):
+                        self.reconnect(user_input_str)
+                        continue
+                    else:
+                        self.display_error("The operation could not be completed successfully.")
 
 
             elif cmd == "delete":
@@ -238,8 +253,12 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         response = json.loads(response)
                         s.close()
                         self.show_results(response)
-                except:
-                    self.display_error("The operation could not be completed successfully.")
+                except Exception as e:
+                    if isinstance(e, ConnectionRefusedError):
+                        self.reconnect(user_input_str)
+                        continue
+                    else:
+                        self.display_error("The operation could not be completed successfully.")
 
             
             elif cmd == "list":
@@ -268,8 +287,12 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         response = json.loads(response)
                         s.close()
                         self.show_list(response)
-                except:
-                    self.display_error("The operation could not be completed successfully.")
+                except Exception as e:
+                    if isinstance(e, ConnectionRefusedError):
+                        self.reconnect(user_input_str)
+                        continue
+                    else:
+                        self.display_error("The operation could not be completed successfully.")
 
 
             elif cmd == "add-tags":
@@ -306,8 +329,12 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         response = json.loads(response)
                         s.close()
                         self.show_results(response)
-                except:
-                    self.display_error("The operation could not be completed successfully.")
+                except Exception as e:
+                    if isinstance(e, ConnectionRefusedError):
+                        self.reconnect(user_input_str)
+                        continue
+                    else:
+                        self.display_error("The operation could not be completed successfully.")
 
 
             elif cmd == "delete-tags":
@@ -344,8 +371,12 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         response = json.loads(response)
                         s.close()
                         self.show_results(response)
-                except:
-                    self.display_error("The operation could not be completed successfully.")
+                except Exception as e:
+                    if isinstance(e, ConnectionRefusedError):
+                        self.reconnect(user_input_str)
+                        continue
+                    else:
+                        self.display_error("The operation could not be completed successfully.")
 
 
             elif cmd == 'download':
@@ -399,8 +430,12 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         print(f"{bcolors.OKGREEN}Download completed{bcolors.ENDC}")
                         s.sendall(f"{OK}".encode('utf-8'))
                         s.close()
-                except:
-                    self.display_error("The operation could not be completed")
+                except Exception as e:
+                    if isinstance(e, ConnectionRefusedError):
+                        self.reconnect(user_input_str)
+                        continue
+                    else:
+                        self.display_error("The operation could not be completed successfully.")
 
 
             elif cmd == 'inspect-tag':
@@ -433,8 +468,12 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         response = json.loads(response)
                         s.close()
                         self.show_tag_file_relationship(response, 'files_by_tag')
-                except:
-                    self.display_error("The operation could not be completed successfully.")
+                except Exception as e:
+                    if isinstance(e, ConnectionRefusedError):
+                        self.reconnect(user_input_str)
+                        continue
+                    else:
+                        self.display_error("The operation could not be completed successfully.")
 
 
             elif cmd == 'inspect-file':
@@ -467,8 +506,12 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
                         response = json.loads(response)
                         s.close()
                         self.show_tag_file_relationship(response, 'tags_by_file')
-                except:
-                    self.display_error("The operation could not be completed successfully.")
+                except Exception as e:
+                    if isinstance(e, ConnectionRefusedError):
+                        self.reconnect(user_input_str)
+                        continue
+                    else:
+                        self.display_error("The operation could not be completed successfully.")
 
 
 
@@ -478,8 +521,11 @@ example {bcolors.ENDC} <tag-list> {bcolors.OKBLUE} as {bcolors.ENDC} red;blue
 
             print("")
 
-    def check_no_comma(self):
-        pass
+    def reconnect(self, user_input):
+        new_ip = SelfDiscovery(self.ip).find(verbose=False)
+        self.target_ip = new_ip
+        self.retry = True
+        self.retry_cmd = user_input
 
     def display_error(self, msg: str):
         print(bcolors.FAIL + msg + bcolors.ENDC)
@@ -572,10 +618,12 @@ if __name__ == "__main__":
 
     ip = socket.gethostbyname(socket.gethostname())
 
+    self_disc_obj = SelfDiscovery(ip)
+
     # Connect to any node
     if len(sys.argv) == 1:
-        target_ip = SelfDiscovery(ip).find()
-        Client(target_ip=target_ip)
+        target_ip = self_disc_obj.find()
+        Client(self_disc_obj, target_ip=target_ip)
 
     # Connect to specific IP addres
     elif len(sys.argv) == 2:
@@ -585,5 +633,5 @@ if __name__ == "__main__":
         except:
             raise Exception(f"{target_ip} cannot be interpreted as an IP address")
 
-        Client(target_ip=target_ip)
+        Client(self_disc_obj, target_ip=target_ip)
         

@@ -18,7 +18,7 @@ class ChordNodeReference:
                 s.sendall(f'{op},{data}'.encode('utf-8'))
                 return s.recv(1024)
         except Exception as e:
-            print(f"Error sending data: {e}")
+            # print(f"Error sending data: {e}")
             return b''
 
     # Method to find the successor of a given id
@@ -84,7 +84,7 @@ class ChordNodeReference:
                 s.sendall(f'{op},{data}'.encode('utf-8'))
                 return s.recv(1024)
         except Exception as e:
-            print(f"Error sending data: {e}")
+            # print(f"Error sending data: {e}")
             return b''
     
 
