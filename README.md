@@ -1,5 +1,8 @@
 # Tag based - File System
 
+- Claudia Alvarez Martínez C-412
+- Roger Moreno Gutiérrez C-412
+
 El proyecto consiste en un sistema distribuido para el almacenamiento y gestión de archivos basados en tags. Un **tag** puede etiquetar múltiples archivos, y un archivo puede tener múltiples tags. La distribución del sistema está basada en **Chord**.
 
 
