@@ -21,11 +21,6 @@ class ChordNodeReference:
             # print(f"Error sending data: {e}")
             return b''
 
-    # Method to find the successor of a given id
-    # def find_successor(self, id: int) -> 'ChordNodeReference':
-    #     response = self._send_chord_data(FIND_SUCCESSOR, str(id)).decode('utf-8').split(',')
-    #     ip = response[1]
-    #     return ChordNodeReference(ip, self.chord_port)
 
     # Method to find the predecessor of a given id
     def find_predecessor(self, id: int) -> 'ChordNodeReference':

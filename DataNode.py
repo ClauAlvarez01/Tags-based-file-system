@@ -1,5 +1,3 @@
-import sys
-import time
 import socket
 import threading
 from const import *
@@ -7,8 +5,6 @@ from utils import *
 from logger import Logger
 from database import Database
 from ChordNode import ChordNode
-from self_discovery import SelfDiscovery
-from ChordNodeReference import ChordNodeReference
 
 class DataNode(ChordNode):
     def __init__(self, ip: str):
@@ -25,57 +21,7 @@ class DataNode(ChordNode):
         self.database = Database(ip)
 
         threading.Thread(target=self.start_data_server, daemon=True).start()
-        # threading.Thread(target=self.temporal_insert, daemon=True).start()
         
-
-    def temporal_insert(self):
-        time.sleep(5)
-        if self.ip == '172.17.0.2':
-            print("🔼 Insertando tag")
-            response = self.ref.insert_tag("rojo").split(",")
-            print(response)
-            print("🔼 Insertando tag")
-            response = self.ref.insert_tag("azul").split(",")
-            print(response)
-
-            print("🔼 Insertando file en tag")
-            response = self.ref.append_file("rojo", "file1").split(",")
-            print(response)
-            print("🔼 Insertando file en tag")
-            response = self.ref.append_file("azul", "file2").split(",")
-            print(response)
-
-            print("🔼 Insertando file")
-            response = self.ref.insert_file("file1").split(",")
-            print(response)
-            print("🔼 Insertando file")
-            response = self.ref.insert_file("file2").split(",")
-            print(response)
-
-            print("🔼 Insertando tag en file")
-            response = self.ref.append_tag("file1", "rojo").split(",")
-            print(response)
-            print("🔼 Insertando tag en file")
-            response = self.ref.append_tag("file2", "azul").split(",")
-            print(response)
-
-            # print("🔼 Insertando un BIN")
-            # temp_file = []
-            # with open("prueba.txt", 'rb') as archivo:
-            #     while True:
-            #         datos = archivo.read(1024)
-            #         if not datos:
-            #             break
-            #         temp_file.append(datos)
-            # temp_file = b''.join(temp_file)
-
-            # response = self.ref.insert_bin("prueba.txt", temp_file)
-            # print(response)
-
-            # print("🔼 Borrando un BIN")
-            # time.sleep(10)
-            # response = self.ref.delete_bin("prueba.txt")
-            # print(response)
 
 
 

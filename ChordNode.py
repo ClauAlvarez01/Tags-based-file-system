@@ -1,14 +1,10 @@
 import socket
 import threading
-import sys
 import time
 from const import *
 from utils import *
-from ipaddress import ip_address
-from logger import Logger
 from ChordNodeReference import ChordNodeReference
 from leader_election import LeaderElection
-from self_discovery import SelfDiscovery
 
 
 class ChordNode:
@@ -54,12 +50,6 @@ class ChordNode:
         while not inbetween(id, node.id, node.succ.id):
             node = node.succ
         return node.ref if isinstance(node, ChordNode) else node
-    
-
-    # Method to find the successor of a given id
-    # def find_succ(self, id: int) -> 'ChordNodeReference':
-    #     node = self.find_pred(id)
-    #     return node.succ
 
 
     def lookup(self, id: int) -> 'ChordNodeReference':
@@ -215,10 +205,6 @@ class ChordNode:
         data_resp = None
         option = int(data[0])
 
-        # Switch operation
-        # if option == FIND_SUCCESSOR:
-        #     target_id = int(data[1])
-        #     data_resp = self.find_succ(target_id)
 
         if option == FIND_PREDECESSOR:
             target_id = int(data[1])
