@@ -131,6 +131,7 @@ class ChordNode:
                             # Setearlo si no es el mismo
                             if x.id != self.succ.id:
                                 self.succ = x
+                                self.update_replication(False, True, False, False)
                         
                         # Notify mi successor
                         self.succ.notify(self.ref)
@@ -179,7 +180,7 @@ class ChordNode:
         self.pred = node
         self.predpred = self.ref
         # Update replication with new successor
-        self.update_replication(True, False)
+        self.update_replication(delegate_data=True, case_2=True)
 
         print(f"[*] end act...")
         
@@ -199,7 +200,7 @@ class ChordNode:
 
                         self.pred = self.find_pred(self.predpred.id)
                         self.predpred = self.pred.pred
-                        
+
                     self.pred.reverse_notify(self.ref)
 
                     if self.pred.id == self.id:

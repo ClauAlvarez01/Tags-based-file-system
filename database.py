@@ -130,40 +130,43 @@ class Database:
     def contains_tag(self, tag: str) -> bool:
         return tag in self.tags or tag in self.replicated_pred_tags
 
-    def store_tag(self, tag: str, successor_ip: str, predecesor_ip: str):
+    def store_tag(self, tag: str, successor_ip: str, predecesor_ip: str = None):
         """Adds tag key to storage with empty list"""
         self.tags[tag] = []
         op = f"{REPLICATE_PRED_STORE_TAG}"
         msg = tag
         send_2(op, msg, successor_ip, self.db_port)      # Replicate pred 
-        op = f"{REPLICATE_SUCC_STORE_TAG}"
-        msg = tag
-        send_2(op, msg, predecesor_ip, self.db_port)      # Replicate succ
+        if predecesor_ip:
+            op = f"{REPLICATE_SUCC_STORE_TAG}"
+            msg = tag
+            send_2(op, msg, predecesor_ip, self.db_port)      # Replicate succ
         self.save_tags()
 
-    def append_file(self, tag: str, file_name: str, successor_ip: str, predecesor_ip: str):
+    def append_file(self, tag: str, file_name: str, successor_ip: str, predecesor_ip: str = None):
         """Appends file name to given tag storage"""
         self.tags[tag].append(file_name)
         op = f"{REPLICATE_PRED_APPEND_FILE}"
         msg = f"{tag};{file_name}"
         send_2(op, msg, successor_ip, self.db_port)      # Replicate pred
-        op = f"{REPLICATE_SUCC_APPEND_FILE}"
-        msg = f"{tag};{file_name}"
-        send_2(op, msg, predecesor_ip, self.db_port)      # Replicate succ
+        if predecesor_ip:
+            op = f"{REPLICATE_SUCC_APPEND_FILE}"
+            msg = f"{tag};{file_name}"
+            send_2(op, msg, predecesor_ip, self.db_port)      # Replicate succ
         self.save_tags()
     
-    def delete_tag(self, tag: str, successor_ip: str, predecesor_ip: str):
+    def delete_tag(self, tag: str, successor_ip: str, predecesor_ip: str = None):
         """Deletes tag key from storage"""
         del self.tags[tag]
         op = f"{REPLICATE_PRED_DELETE_TAG}"
         msg = tag
         send_2(op, msg, successor_ip, self.db_port)      # Replicate pred
-        op = f"{REPLICATE_SUCC_DELETE_TAG}"
-        msg = tag
-        send_2(op, msg, predecesor_ip, self.db_port)      # Replicate succ
+        if predecesor_ip:
+            op = f"{REPLICATE_SUCC_DELETE_TAG}"
+            msg = tag
+            send_2(op, msg, predecesor_ip, self.db_port)      # Replicate succ
         self.save_tags()
 
-    def remove_file(self, tag: str, file_name: str, successor_ip: str, predecesor_ip: str):
+    def remove_file(self, tag: str, file_name: str, successor_ip: str, predecesor_ip: str = None):
         """Removes file name from given tag storage"""
         self.tags[tag].remove(file_name)
         if len(self.tags[tag]) == 0:
@@ -171,9 +174,10 @@ class Database:
         op = f"{REPLICATE_PRED_REMOVE_FILE}"
         msg = f"{tag};{file_name}"
         send_2(op, msg, successor_ip, self.db_port)      # Replicate pred
-        op = f"{REPLICATE_SUCC_REMOVE_FILE}"
-        msg = f"{tag};{file_name}"
-        send_2(op, msg, predecesor_ip, self.db_port)      # Replicate succ
+        if predecesor_ip:
+            op = f"{REPLICATE_SUCC_REMOVE_FILE}"
+            msg = f"{tag};{file_name}"
+            send_2(op, msg, predecesor_ip, self.db_port)      # Replicate succ
         self.save_tags()
 
     def retrieve_tag(self, tag: str) -> str:
@@ -194,48 +198,52 @@ class Database:
     def contains_file(self, file_name: str) -> bool:
         return file_name in self.files or file_name in self.replicated_pred_files
 
-    def store_file(self, file_name: str, successor_ip: str, predecesor_ip: str):
+    def store_file(self, file_name: str, successor_ip: str, predecesor_ip: str = None):
         """Adds file name key to storage with empty list"""
         self.files[file_name] = []
         op = f"{REPLICATE_PRED_STORE_FILE}"
         msg = file_name
         send_2(op, msg, successor_ip, self.db_port)       # Replicate pred
-        op = f"{REPLICATE_SUCC_STORE_FILE}"
-        msg = file_name
-        send_2(op, msg, predecesor_ip, self.db_port)       # Replicate succ
+        if predecesor_ip:
+            op = f"{REPLICATE_SUCC_STORE_FILE}"
+            msg = file_name
+            send_2(op, msg, predecesor_ip, self.db_port)       # Replicate succ
         self.save_files()
 
-    def append_tag(self, file_name: str, tag: str, successor_ip: str, predecesor_ip: str):
+    def append_tag(self, file_name: str, tag: str, successor_ip: str, predecesor_ip: str = None):
         """Appends tag to given file name storage"""
         self.files[file_name].append(tag)
         op = f"{REPLICATE_PRED_APPEND_TAG}"
         msg = f"{file_name};{tag}"
         send_2(op, msg, successor_ip, self.db_port)       # Replicate pred
-        op = f"{REPLICATE_SUCC_APPEND_TAG}"
-        msg = f"{file_name};{tag}"
-        send_2(op, msg, predecesor_ip, self.db_port)       # Replicate succ
+        if predecesor_ip:
+            op = f"{REPLICATE_SUCC_APPEND_TAG}"
+            msg = f"{file_name};{tag}"
+            send_2(op, msg, predecesor_ip, self.db_port)       # Replicate succ
         self.save_files()
 
-    def delete_file(self, file_name: str, successor_ip: str, predecesor_ip: str):
+    def delete_file(self, file_name: str, successor_ip: str, predecesor_ip: str = None):
         """Deletes file name key from storage"""
         del self.files[file_name]
         op = f"{REPLICATE_PRED_DELETE_FILE}"
         msg = file_name
         send_2(op, msg, successor_ip, self.db_port)       # Replicate pred
-        op = f"{REPLICATE_SUCC_DELETE_FILE}"
-        msg = file_name
-        send_2(op, msg, predecesor_ip, self.db_port)       # Replicate succ
+        if predecesor_ip:
+            op = f"{REPLICATE_SUCC_DELETE_FILE}"
+            msg = file_name
+            send_2(op, msg, predecesor_ip, self.db_port)       # Replicate succ
         self.save_files()
 
-    def remove_tag(self, file_name: str, tag: str, successor_ip: str, predecesor_ip: str):
+    def remove_tag(self, file_name: str, tag: str, successor_ip: str, predecesor_ip: str = None):
         """Removes tag from given file name storage"""
         self.files[file_name].remove(tag)
         op = f"{REPLICATE_PRED_REMOVE_TAG}"
         msg = f"{file_name};{tag}"
         send_2(op, msg, successor_ip, self.db_port)       # Replicate pred
-        op = f"{REPLICATE_SUCC_REMOVE_TAG}"
-        msg = f"{file_name};{tag}"
-        send_2(op, msg, predecesor_ip, self.db_port)       # Replicate succ
+        if predecesor_ip:
+            op = f"{REPLICATE_SUCC_REMOVE_TAG}"
+            msg = f"{file_name};{tag}"
+            send_2(op, msg, predecesor_ip, self.db_port)       # Replicate succ
         self.save_files()
 
     def retrieve_file(self, file_name: str) -> str:
@@ -250,7 +258,7 @@ class Database:
     
     #######################
     # BINS
-    def store_bin(self, file_name: str, bin: bytes, successor_ip: str, predecesor_ip: str):
+    def store_bin(self, file_name: str, bin: bytes, successor_ip: str, predecesor_ip: str = None):
         """Stores file content"""
         file_path = f"{self.bins_path}/{file_name}"
         with open(file_path, 'wb') as file:
@@ -258,10 +266,11 @@ class Database:
 
         op = f"{REPLICATE_PRED_STORE_BIN}"
         send_bin(op, file_name, bin, successor_ip, self.db_port)    # Replicate pred
-        op = f"{REPLICATE_SUCC_STORE_BIN}"
-        send_bin(op, file_name, bin, predecesor_ip, self.db_port)    # Replicate succ
+        if predecesor_ip:
+            op = f"{REPLICATE_SUCC_STORE_BIN}"
+            send_bin(op, file_name, bin, predecesor_ip, self.db_port)    # Replicate succ
 
-    def delete_bin(self, file_name: str, successor_ip: str, predecesor_ip: str):
+    def delete_bin(self, file_name: str, successor_ip: str, predecesor_ip: str = None):
         """Deletes file content"""
         file_path = f"{self.bins_path}/{file_name}"
         os.remove(file_path)
@@ -269,9 +278,10 @@ class Database:
         op = f"{REPLICATE_PRED_DELETE_BIN}"
         msg = file_name
         send_2(op, msg, successor_ip, self.db_port)                 # Replicate pred
-        op = f"{REPLICATE_SUCC_DELETE_BIN}"
-        msg = file_name
-        send_2(op, msg, predecesor_ip, self.db_port)                 # Replicate succ
+        if predecesor_ip:
+            op = f"{REPLICATE_SUCC_DELETE_BIN}"
+            msg = file_name
+            send_2(op, msg, predecesor_ip, self.db_port)                 # Replicate succ
 
     def retrieve_bin(self, file_name: str) -> bytes:
         file_path = f"{self.bins_path}/{file_name}"
@@ -340,7 +350,7 @@ class Database:
 
 
     # Function to delegate data to the new incoming owner
-    def delegate_data(self, new_owner_ip: str, listener_ip: str):
+    def delegate_data(self, new_owner_ip: str, successor_ip: str, predecessor_ip: str, case_2: bool):
         print(f"[📤] Delegating data to {new_owner_ip}")
         i_t = 0
         i_f = 0
@@ -391,7 +401,8 @@ class Database:
             send_bins(s, files_to_delegate, self.bins_path)
             
             # Send ip
-            s.sendall(f"{self.db_ip}".encode('utf-8'))
+            
+            s.sendall(f"{self.db_ip};{"1" if case_2 else "0"}".encode('utf-8'))
             s.close()
 
         print(f"[📤] {i_t} tags delegated")
@@ -410,54 +421,101 @@ class Database:
         self.save_files()
 
         # Let know my successor i have new data
-        self.send_fetch_notification(listener_ip)
+        self.send_fetch_notification(successor_ip)
+
+        # Let know my predecessor i have new data
+        self.send_fetch_notification(predecessor_ip, False)
+
 
 
     # Function to pull all data from node's predecessor and store it in replication dict
-    def pull_replication(self, owner_ip: str):
-        # Delete current replicates
-        for k, _ in self.replicated_pred_files.items():
-            os.remove(f"{self.replicated_pred_bins_path}/{k}")
-        self.replicated_pred_tags = {}
-        self.replicated_pred_files = {}
-        
-        # Get actual predecesor replicas
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((owner_ip, self.db_port))
+    def pull_replication(self, owner_ip: str, is_pred: bool = True):
 
-            # Ask for replication
-            s.sendall(f"{PULL_REPLICATION}".encode('utf-8'))
-
-            # Receive tags
-            tags_json_str = s.recv(1024).decode('utf-8')
-            tags_data = json.loads(tags_json_str)
-
-            s.sendall(f"{OK}".encode('utf-8'))
-
-            # Receive files
-            files_json_str = s.recv(1024).decode('utf-8')
-            files_data = json.loads(files_json_str)
-
-            s.sendall(f"{OK}".encode('utf-8'))
+        if is_pred:
+            # Delete current replicates
+            for k, _ in self.replicated_pred_files.items():
+                os.remove(f"{self.replicated_pred_bins_path}/{k}")
+            self.replicated_pred_tags = {}
+            self.replicated_pred_files = {}
             
-            # Receive and write bins
-            recv_write_bins(s, self.replicated_pred_bins_path)
+            # Get actual predecesor replicas
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((owner_ip, self.db_port))
 
-            # Overwrite replicated tags and files
-            self.replicated_pred_tags = tags_data
-            self.replicated_pred_files = files_data
+                # Ask for replication
+                s.sendall(f"{PULL_REPLICATION}".encode('utf-8'))
 
-            self.save_replicated_pred_tags()
-            self.save_replicated_pred_files()
+                # Receive tags
+                tags_json_str = s.recv(1024).decode('utf-8')
+                tags_data = json.loads(tags_json_str)
 
-            print(f"[📩] I pulled replication from {owner_ip}")
-            s.close()
+                s.sendall(f"{OK}".encode('utf-8'))
+
+                # Receive files
+                files_json_str = s.recv(1024).decode('utf-8')
+                files_data = json.loads(files_json_str)
+
+                s.sendall(f"{OK}".encode('utf-8'))
+                
+                # Receive and write bins
+                recv_write_bins(s, self.replicated_pred_bins_path)
+
+                # Overwrite replicated tags and files
+                self.replicated_pred_tags = tags_data
+                self.replicated_pred_files = files_data
+
+                self.save_replicated_pred_tags()
+                self.save_replicated_pred_files()
+
+                s.close()
+
+        else:
+            # Delete current replicates
+            for k, _ in self.replicated_succ_files.items():
+                os.remove(f"{self.replicated_succ_bins_path}/{k}")
+            self.replicated_succ_tags = {}
+            self.replicated_succ_files = {}
+            
+            # Get actual predecesor replicas
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((owner_ip, self.db_port))
+
+                # Ask for replication
+                s.sendall(f"{PULL_REPLICATION}".encode('utf-8'))
+
+                # Receive tags
+                tags_json_str = s.recv(1024).decode('utf-8')
+                tags_data = json.loads(tags_json_str)
+
+                s.sendall(f"{OK}".encode('utf-8'))
+
+                # Receive files
+                files_json_str = s.recv(1024).decode('utf-8')
+                files_data = json.loads(files_json_str)
+
+                s.sendall(f"{OK}".encode('utf-8'))
+                
+                # Receive and write bins
+                recv_write_bins(s, self.replicated_succ_bins_path)
+
+                # Overwrite replicated tags and files
+                self.replicated_succ_tags = tags_data
+                self.replicated_succ_files = files_data
+
+                self.save_replicated_succ_tags()
+                self.save_replicated_succ_files()
+
+                s.close()
+
+        print(f"[📩] I pulled replication from {owner_ip}")
+
 
     
 
     # Function to notify my replications listeners, that my data has changed
-    def send_fetch_notification(self, target_ip: str):
-        send_2(f"{FETCH_REPLICA}", self.db_ip, target_ip, self.db_port)
+    def send_fetch_notification(self, target_ip: str, is_pred: bool = True):
+        is_pred_str = "1" if is_pred else "0"
+        send_2(f"{FETCH_REPLICA}", f"{self.db_ip};{is_pred_str}", target_ip, self.db_port)
 
     ########################################################################################
 
@@ -676,10 +734,14 @@ class Database:
             recv_write_bins(conn, self.bins_path)
             
             # Send IP
-            ip = conn.recv(1024).decode('utf-8')
+            ip, is_pred = conn.recv(1024).decode('utf-8').split(";")
 
             # Let my sucessor know i have new data
             self.send_fetch_notification(ip)
+
+            # Let my predecessor know i have new data
+            if is_pred == "1":
+                self.send_fetch_notification(ip, False)
         
 
         # Send all my stored data
@@ -708,9 +770,12 @@ class Database:
         elif data == f"{FETCH_REPLICA}":
             conn.sendall(f"{OK}".encode('utf-8'))
 
-            ip = conn.recv(1024).decode('utf-8')
+            ip, is_pred = conn.recv(1024).decode('utf-8').split(';')
             
-            self.pull_replication(ip)
+            if is_pred == "1":
+                self.pull_replication(ip, True)
+            else:
+                self.pull_replication(ip, False)
 
             conn.sendall(f"{OK}".encode('utf-8'))
 
