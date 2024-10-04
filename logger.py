@@ -53,10 +53,16 @@ Leader   : {lead}
 📁 Files:
 {self.format_data(self.node.database.files)}
 
------------------ Replicated Predecesor -----------------
+----------------- Replicated Predecessor ----------------
 🔖 Tags:
 {self.format_data(self.node.database.replicated_pred_tags)}
 📁 Files:
 {self.format_data(self.node.database.replicated_pred_files)}
+
+----------------- Replicated Successor ------------------
+🔖 Tags:
+{self.format_data(self.node.database.replicated_succ_tags)}
+📁 Files:
+{self.format_data(self.node.database.replicated_succ_files)}
 """
                 file.write(log)

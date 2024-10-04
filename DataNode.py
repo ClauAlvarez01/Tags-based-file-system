@@ -275,7 +275,7 @@ class DataNode(ChordNode):
             if self.database.owns_tag(tag):
                 return "OK,Tag already exists"
             else:
-                self.database.store_tag(tag, self.succ.ip)
+                self.database.store_tag(tag, self.succ.ip, self.pred.ip)
                 return "OK,Data inserted"
         # I am not owner, foward
         else:
@@ -290,7 +290,7 @@ class DataNode(ChordNode):
             if not self.database.owns_tag(tag):
                 return "OK,Key does not exists"
             else:
-                self.database.delete_tag(tag, self.succ.ip)
+                self.database.delete_tag(tag, self.succ.ip, self.pred.ip)
                 return "OK,Data deleted"
         # I am not owner
         else:
@@ -302,7 +302,7 @@ class DataNode(ChordNode):
         owner = self.lookup(tag_hash)
         # I am owner
         if owner.id == self.id:
-            self.database.append_file(tag, file_name, self.succ.ip)
+            self.database.append_file(tag, file_name, self.succ.ip, self.pred.ip)
             return "OK,Data appended"
         # I am not owner
         else:
@@ -315,7 +315,7 @@ class DataNode(ChordNode):
 
         # I am owner
         if owner.id == self.id:
-            self.database.remove_file(tag, file_name, self.succ.ip)
+            self.database.remove_file(tag, file_name, self.succ.ip, self.pred.ip)
             return "OK,Data removed"
         # I am not owner
         else:
@@ -335,7 +335,7 @@ class DataNode(ChordNode):
             if self.database.owns_file(file_name):
                 return "OK,File already exists"
             else:
-                self.database.store_file(file_name, self.succ.ip)
+                self.database.store_file(file_name, self.succ.ip, self.pred.ip)
                 return "OK,Data inserted"
         # I am not owner, foward
         else:
@@ -350,7 +350,7 @@ class DataNode(ChordNode):
             if not self.database.owns_file(file_name):
                 return "OK,Key does not exists"
             else:
-                self.database.delete_file(file_name, self.succ.ip)
+                self.database.delete_file(file_name, self.succ.ip, self.pred.ip)
                 return "OK,Data deleted"
         # I am not owner
         else:
@@ -362,7 +362,7 @@ class DataNode(ChordNode):
         owner = self.lookup(file_name_hash)
         # I am owner
         if owner.id == self.id:
-            self.database.append_tag(file_name, tag, self.succ.ip)
+            self.database.append_tag(file_name, tag, self.succ.ip, self.pred.ip)
             return "OK,Data appended"
         # I am not owner
         else:
@@ -375,7 +375,7 @@ class DataNode(ChordNode):
 
         # I am owner
         if owner.id == self.id:
-            self.database.remove_tag(file_name, tag, self.succ.ip)
+            self.database.remove_tag(file_name, tag, self.succ.ip, self.pred.ip)
             return "OK,Data removed"
         # I am not owner
         else:
@@ -392,7 +392,7 @@ class DataNode(ChordNode):
 
         # I am owner
         if owner.id == self.id:
-            self.database.store_bin(file_name, bin, self.succ.ip)
+            self.database.store_bin(file_name, bin, self.succ.ip, self.pred.ip)
             return "OK,Binary file inserted"
         # I am not owner
         else:
@@ -405,7 +405,7 @@ class DataNode(ChordNode):
 
         # I am owner
         if owner.id == self.id:
-            self.database.delete_bin(file_name, self.succ.ip)
+            self.database.delete_bin(file_name, self.succ.ip, self.pred.ip)
             return "OK,Binary file deleted"
         # I am not owner
         else:
