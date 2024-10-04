@@ -16,19 +16,19 @@ class Database:
 
         # For tags and correspondings file names
         self.tags: Dict[str, List[str]] = {}
-        self.replicated_tags: Dict[str, List[str]] = {}
+        self.replicated_pred_tags: Dict[str, List[str]] = {}
         # For file names and correspondings tags
         self.files: Dict[str, List[str]] = {}
-        self.replicated_files: Dict[str, List[str]] = {}
+        self.replicated_pred_files: Dict[str, List[str]] = {}
 
         # Paths
         self.dir_path = f"database/{self.db_ip}"
         self.tags_path = f"{self.dir_path}/tags.json"
         self.files_path = f"{self.dir_path}/files.json"
-        self.replicated_tags_path = f"{self.dir_path}/replicated_tags.json"
-        self.replicated_files_path = f"{self.dir_path}/replicated_files.json"
+        self.replicated_pred_tags_path = f"{self.dir_path}/replicated_pred_tags.json"
+        self.replicated_pred_files_path = f"{self.dir_path}/replicated_pred_files.json"
         self.bins_path = f"{self.dir_path}/bins"
-        self.replicated_bins_path = f"{self.dir_path}/replicated_bins"
+        self.replicated_pred_bins_path = f"{self.dir_path}/replicated_pred_bins"
 
         # Prepare storage
         self.set_up_storage()
@@ -54,23 +54,23 @@ class Database:
         with open(self.files_path, 'w') as json_file:
             json.dump(self.files, json_file, indent=4)
 
-        if os.path.isfile(self.replicated_tags_path):
-            os.remove(self.replicated_tags_path)
-        with open(self.replicated_tags_path, 'w') as json_file:
-            json.dump(self.replicated_tags, json_file, indent=4)
+        if os.path.isfile(self.replicated_pred_tags_path):
+            os.remove(self.replicated_pred_tags_path)
+        with open(self.replicated_pred_tags_path, 'w') as json_file:
+            json.dump(self.replicated_pred_tags, json_file, indent=4)
         
-        if os.path.isfile(self.replicated_files_path):  
-            os.remove(self.replicated_files_path)
-        with open(self.replicated_files_path, 'w') as json_file:
-            json.dump(self.replicated_files, json_file, indent=4)
+        if os.path.isfile(self.replicated_pred_files_path):  
+            os.remove(self.replicated_pred_files_path)
+        with open(self.replicated_pred_files_path, 'w') as json_file:
+            json.dump(self.replicated_pred_files, json_file, indent=4)
 
         if os.path.exists(self.bins_path):
             shutil.rmtree(self.bins_path)
         os.makedirs(self.bins_path)
         
-        if os.path.exists(self.replicated_bins_path):
-            shutil.rmtree(self.replicated_bins_path)
-        os.makedirs(self.replicated_bins_path)
+        if os.path.exists(self.replicated_pred_bins_path):
+            shutil.rmtree(self.replicated_pred_bins_path)
+        os.makedirs(self.replicated_pred_bins_path)
 
         print("[💾] Successfull set up")
 
@@ -86,12 +86,12 @@ class Database:
             json.dump(self.files, json_file, indent=4)
 
     def save_replicated_tags(self):
-        with open(self.replicated_tags_path, 'w') as json_file:
-            json.dump(self.replicated_tags, json_file, indent=4)
+        with open(self.replicated_pred_tags_path, 'w') as json_file:
+            json.dump(self.replicated_pred_tags, json_file, indent=4)
 
     def save_replicated_files(self):
-        with open(self.replicated_files_path, 'w') as json_file:
-            json.dump(self.replicated_files, json_file, indent=4)
+        with open(self.replicated_pred_files_path, 'w') as json_file:
+            json.dump(self.replicated_pred_files, json_file, indent=4)
 
 
 
@@ -103,7 +103,7 @@ class Database:
         return tag in self.tags
     
     def contains_tag(self, tag: str) -> bool:
-        return tag in self.tags or tag in self.replicated_tags
+        return tag in self.tags or tag in self.replicated_pred_tags
 
     def store_tag(self, tag: str, successor_ip: str):
         """Adds tag key to storage with empty list"""
@@ -155,7 +155,7 @@ class Database:
         return file_name in self.files
     
     def contains_file(self, file_name: str) -> bool:
-        return file_name in self.files or file_name in self.replicated_files
+        return file_name in self.files or file_name in self.replicated_pred_files
 
     def store_file(self, file_name: str, successor_ip: str):
         """Adds file name key to storage with empty list"""
@@ -243,16 +243,16 @@ class Database:
         print(f"[📥] Assuming predecesor data")
 
         # Assume replicated tags
-        self.tags.update(self.replicated_tags)
-        print(f"[📥] {len(self.replicated_tags.items())} tags assumed")
-        self.replicated_tags = {}
+        self.tags.update(self.replicated_pred_tags)
+        print(f"[📥] {len(self.replicated_pred_tags.items())} tags assumed")
+        self.replicated_pred_tags = {}
         self.save_tags()
         self.save_replicated_tags()
 
         # Assume replicated bins
-        for k, _ in self.replicated_files.items():
+        for k, _ in self.replicated_pred_files.items():
             # Read bin
-            file_path = f"{self.replicated_bins_path}/{k}"
+            file_path = f"{self.replicated_pred_bins_path}/{k}"
             content = []
             with open(file_path, 'rb') as file:
                 while True:
@@ -271,9 +271,9 @@ class Database:
             os.remove(file_path)
 
         # Assume replicated files
-        self.files.update(self.replicated_files)
-        print(f"[📥] {len(self.replicated_files.items())} files assumed")
-        self.replicated_files = {}
+        self.files.update(self.replicated_pred_files)
+        print(f"[📥] {len(self.replicated_pred_files.items())} files assumed")
+        self.replicated_pred_files = {}
         self.save_files()
         self.save_replicated_files()
 
@@ -362,10 +362,10 @@ class Database:
     # Function to pull all data from node's predecessor and store it in replication dict
     def pull_replication(self, owner_ip: str):
         # Delete current replicates
-        for k, _ in self.replicated_files.items():
-            os.remove(f"{self.replicated_bins_path}/{k}")
-        self.replicated_tags = {}
-        self.replicated_files = {}
+        for k, _ in self.replicated_pred_files.items():
+            os.remove(f"{self.replicated_pred_bins_path}/{k}")
+        self.replicated_pred_tags = {}
+        self.replicated_pred_files = {}
         
         # Get actual predecesor replicas
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -387,11 +387,11 @@ class Database:
             s.sendall(f"{OK}".encode('utf-8'))
             
             # Receive and write bins
-            recv_write_bins(s, self.replicated_bins_path)
+            recv_write_bins(s, self.replicated_pred_bins_path)
 
             # Overwrite replicated tags and files
-            self.replicated_tags = tags_data
-            self.replicated_files = files_data
+            self.replicated_pred_tags = tags_data
+            self.replicated_pred_files = files_data
 
             self.save_replicated_tags()
             self.save_replicated_files()
@@ -428,7 +428,7 @@ class Database:
         if data == f"{REPLICATE_STORE_TAG}":
             conn.sendall(f"{OK}".encode('utf-8'))
             tag = conn.recv(1024).decode('utf-8')
-            self.replicated_tags[tag] = []
+            self.replicated_pred_tags[tag] = []
             conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_tags()
 
@@ -436,14 +436,14 @@ class Database:
             conn.sendall(f"{OK}".encode('utf-8'))
             data = conn.recv(1024).decode('utf-8').split(';')
             tag, file_name = data[0], data[1]
-            self.replicated_tags[tag].append(file_name)
+            self.replicated_pred_tags[tag].append(file_name)
             conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_tags()
 
         elif data == f"{REPLICATE_DELETE_TAG}":
             conn.sendall(f"{OK}".encode('utf-8'))
             tag = conn.recv(1024).decode('utf-8')
-            del self.replicated_tags[tag]
+            del self.replicated_pred_tags[tag]
             conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_tags()
 
@@ -451,9 +451,9 @@ class Database:
             conn.sendall(f"{OK}".encode('utf-8'))
             data = conn.recv(1024).decode('utf-8').split(';')
             tag, file_name = data[0], data[1]
-            self.replicated_tags[tag].remove(file_name)
-            if len(self.replicated_tags[tag]) == 0:
-                del self.replicated_tags[tag]
+            self.replicated_pred_tags[tag].remove(file_name)
+            if len(self.replicated_pred_tags[tag]) == 0:
+                del self.replicated_pred_tags[tag]
             conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_tags()
 
@@ -462,7 +462,7 @@ class Database:
         elif data == f"{REPLICATE_STORE_FILE}":
             conn.sendall(f"{OK}".encode('utf-8'))
             file_name = conn.recv(1024).decode('utf-8')
-            self.replicated_files[file_name] = []
+            self.replicated_pred_files[file_name] = []
             conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_files()
 
@@ -470,14 +470,14 @@ class Database:
             conn.sendall(f"{OK}".encode('utf-8'))
             data = conn.recv(1024).decode('utf-8').split(';')
             file_name, tag = data[0], data[1]
-            self.replicated_files[file_name].append(tag)
+            self.replicated_pred_files[file_name].append(tag)
             conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_files()
 
         elif data == f"{REPLICATE_DELETE_FILE}":
             conn.sendall(f"{OK}".encode('utf-8'))
             file_name = conn.recv(1024).decode('utf-8')
-            del self.replicated_files[file_name]
+            del self.replicated_pred_files[file_name]
             conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_files()
 
@@ -485,7 +485,7 @@ class Database:
             conn.sendall(f"{OK}".encode('utf-8'))
             data = conn.recv(1024).decode('utf-8').split(';')
             file_name, tag = data[0], data[1]
-            self.replicated_files[file_name].remove(tag)
+            self.replicated_pred_files[file_name].remove(tag)
             conn.sendall(f"{OK}".encode('utf-8'))
             self.save_replicated_files()
 
@@ -496,14 +496,14 @@ class Database:
             file_name = conn.recv(1024).decode('utf-8')
             conn.sendall(f"{OK}".encode('utf-8'))
             bin = conn.recv(1024)
-            with open(f"{self.replicated_bins_path}/{file_name}", 'wb') as file:
+            with open(f"{self.replicated_pred_bins_path}/{file_name}", 'wb') as file:
                 file.write(bin)
             conn.sendall(f"{OK}".encode('utf-8'))
 
         elif data == f"{REPLICATE_DELETE_BIN}":
             conn.sendall(f"{OK}".encode('utf-8'))
             file_name = conn.recv(1024).decode('utf-8')
-            file_path = f"{self.replicated_bins_path}/{file_name}"
+            file_path = f"{self.replicated_pred_bins_path}/{file_name}"
             os.remove(file_path)
             conn.sendall(f"{OK}".encode('utf-8'))
 
