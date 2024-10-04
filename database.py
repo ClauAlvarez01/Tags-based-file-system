@@ -348,6 +348,10 @@ class Database:
         if new_predecessor_ip:
             self.pull_replication(new_predecessor_ip)
 
+        # Let predecessor know my data has changed
+        if new_predecessor_ip:
+            self.send_fetch_notification(new_predecessor_ip, True)
+
 
     # Function to delegate data to the new incoming owner
     def delegate_data(self, new_owner_ip: str, successor_ip: str, predecessor_ip: str, case_2: bool):
