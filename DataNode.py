@@ -150,7 +150,7 @@ class DataNode(ChordNode):
 
 
 
-    def update_replication(self, delegate_data: bool = False, pull_data: bool = True, assume_data: bool = False, is_pred: bool = True, case_2: bool = False):
+    def update_replication(self, delegate_data: bool = False, pull_data: bool = True, assume_data: bool = False, is_pred: bool = True, case_2: bool = False, assume_predpred: str = None):
         
         if delegate_data:
             self.database.delegate_data(self.pred.ip, self.succ.ip, self.pred.ip, case_2)
@@ -164,8 +164,10 @@ class DataNode(ChordNode):
         if assume_data:
             succ_ip = self.succ.ip
             pred_ip = self.pred.ip if self.pred else None
-            self.database.assume_data(succ_ip, pred_ip)
-
+            # print(self.succ)
+            # print(self.pred)
+            # print(f"Se llama a asumir con succ: {succ_ip} y pred: {pred_ip}")
+            self.database.assume_data(succ_ip, pred_ip, assume_predpred)
 
 
 

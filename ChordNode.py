@@ -188,28 +188,40 @@ class ChordNode:
     # Check predecessor method to periodically verify if the predecessor is alive
     def check_predecessor(self):
         while True:
-            if self.pred: print("[*] Checking predecesor...")
+            print("[*] Checking predecesor...")
             try:
                 if self.pred and not self.pred.check_node():
                     print("[-] Predecesor failed")
+                    two_in_a_row = False
 
                     if self.predpred.check_node():
                         self.pred = self.predpred
                         self.predpred = self.predpred.pred
-                    else:
 
+                    else:
                         self.pred = self.find_pred(self.predpred.id)
                         self.predpred = self.pred.pred
+                        two_in_a_row = True
+
+
+                    if self.pred.id == self.id:
+                        self.succ = self.ref
+                        self.pred = None
+                        self.predpred = None
+                        if two_in_a_row: 
+                            self.update_replication(False, False, True, assume_predpred=self.ip)
+                        else:
+                            self.update_replication(False, False, True)
+                        continue
 
                     self.pred.reverse_notify(self.ref)
 
-                    if self.pred.id == self.id:
-                        self.pred = None
-                        self.predpred = None
-
                     # Assume 
-                    self.update_replication(False, False, True)
-                        
+                    if two_in_a_row:
+                        # Assume pred pred data
+                        self.update_replication(False, False, True, assume_predpred=self.pred.ip)
+                    else:
+                        self.update_replication(False, False, True)                      
 
             except Exception as e:
                 self.pred = None

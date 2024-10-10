@@ -50,6 +50,7 @@ TRUE = 1
 
 # Operation codes in Database
 PULL_REPLICATION = 2
+PULL_SUCC_REPLICA = 3
 PUSH_DATA = 4
 FETCH_REPLICA = 8
 

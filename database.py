@@ -303,12 +303,12 @@ class Database:
 
     ################################### REPLICATION FUNCS ######################################
     # Function to assume data from old failed owner
-    def assume_data(self, successor_ip: str, new_predecessor_ip: str = None):
+    def assume_data(self, successor_ip: str, new_predecessor_ip: str = None, assume_predpred: str = None):
         print(f"[📥] Assuming predecesor data")
 
         # Assume replicated tags
         self.tags.update(self.replicated_pred_tags)
-        print(f"[📥] {len(self.replicated_pred_tags.items())} tags assumed")
+        print(f"[📥] {len(self.replicated_pred_tags.items())} tags assumed from predecesor")
         self.replicated_pred_tags = {}
         self.save_tags()
         self.save_replicated_pred_tags()
@@ -336,21 +336,63 @@ class Database:
 
         # Assume replicated files
         self.files.update(self.replicated_pred_files)
-        print(f"[📥] {len(self.replicated_pred_files.items())} files assumed")
+        print(f"[📥] {len(self.replicated_pred_files.items())} files assumed from predecesor")
         self.replicated_pred_files = {}
         self.save_files()
         self.save_replicated_pred_files()
 
+
+
+        # Assume predpred data
+        if assume_predpred:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((assume_predpred, self.db_port))
+
+                # Ask for replicated data
+                s.sendall(f"{PULL_SUCC_REPLICA}".encode('utf-8'))
+
+                # Receive tags
+                tags_json_str = s.recv(1024).decode('utf-8')
+                tags_data = json.loads(tags_json_str)
+
+                s.sendall(f"{OK}".encode('utf-8'))
+
+                # Receive files
+                files_json_str = s.recv(1024).decode('utf-8')
+                files_data = json.loads(files_json_str)
+
+                s.sendall(f"{OK}".encode('utf-8'))
+                
+                # Receive and write bins
+                recv_write_bins(s, self.bins_path)
+
+                # Overwrite replicated tags and files
+                self.tags.update(tags_data)
+                self.files.update(files_data)
+                print(tags_data)
+                print(files_data)
+                self.save_tags()
+                self.save_files()
+
+                print(f"[📥] {len(tags_data.items())} tags assumed from predpred")
+                print(f"[📥] {len(files_data.items())} files assumed from predpred")
+
+                s.close()
+
+
+
         # Let successor know my data has changed
+        print(f"[*] Aviso a mi sucesor: {successor_ip}")
         self.send_fetch_notification(successor_ip)
-        
+
         # Pull replication from predecessor
         if new_predecessor_ip:
             self.pull_replication(new_predecessor_ip)
 
         # Let predecessor know my data has changed
         if new_predecessor_ip:
-            self.send_fetch_notification(new_predecessor_ip, True)
+            print(f"[*] Aviso a mi predecesor: {new_predecessor_ip}")
+            self.send_fetch_notification(new_predecessor_ip, False)
 
 
     # Function to delegate data to the new incoming owner
@@ -436,6 +478,8 @@ class Database:
     def pull_replication(self, owner_ip: str, is_pred: bool = True):
 
         if is_pred:
+            print(f"[📩] I pulled replication from {owner_ip}, con ispred True")
+
             # Delete current replicates
             for k, _ in self.replicated_pred_files.items():
                 os.remove(f"{self.replicated_pred_bins_path}/{k}")
@@ -474,6 +518,8 @@ class Database:
                 s.close()
 
         else:
+            print(f"[📩] I pulled replication from {owner_ip}, con ispred False")
+
             # Delete current replicates
             for k, _ in self.replicated_succ_files.items():
                 os.remove(f"{self.replicated_succ_bins_path}/{k}")
@@ -511,7 +557,7 @@ class Database:
 
                 s.close()
 
-        print(f"[📩] I pulled replication from {owner_ip}")
+        # print(f"[📩] I pulled replication from {owner_ip}")
 
 
     
@@ -519,7 +565,7 @@ class Database:
     # Function to notify my replications listeners, that my data has changed
     def send_fetch_notification(self, target_ip: str, is_pred: bool = True):
         is_pred_str = "1" if is_pred else "0"
-        send_2(f"{FETCH_REPLICA}", f"{self.db_ip};{is_pred_str}", target_ip, self.db_port)
+        threading.Thread(target=send_2, args=(f"{FETCH_REPLICA}", f"{self.db_ip};{is_pred_str}", target_ip, self.db_port), daemon=True).start()
 
     ########################################################################################
 
@@ -768,6 +814,30 @@ class Database:
             
             # Send bins
             send_bins(conn, self.files, self.bins_path)
+
+
+
+        # Send all my stored successor replicas
+        elif data == f"{PULL_SUCC_REPLICA}":
+            # Send tags
+            tags_json_str = json.dumps(self.replicated_succ_tags)
+            conn.sendall(tags_json_str.encode('utf-8'))
+
+            ack = conn.recv(1024).decode('utf-8')
+            if ack != f"{OK}":
+                raise Exception("ACK negativo")
+
+            # Send files
+            files_json_str = json.dumps(self.replicated_succ_files)
+            conn.sendall(files_json_str.encode('utf-8'))
+
+            ack = conn.recv(1024).decode('utf-8')
+            if ack != f"{OK}":
+                raise Exception("ACK negativo")
+            
+            # Send bins
+            send_bins(conn, self.replicated_succ_files, self.replicated_succ_bins_path)
+
     
 
         # Pull data to replicate
