@@ -33,14 +33,18 @@ class Logger():
                 succ_id = succ[0]
                 succ_ip = succ[1]
                 pred = str(self.node.pred).split(',')
+                predpred = str(self.node.predpred).split(',')
                 pred_id = pred[0] if str(self.node.pred) != "None" else ""
                 pred_ip = pred[1] if str(self.node.pred) != "None" else ""
+                predpred_id = predpred[0] if str(self.node.predpred) != "None" else ""
+                predpred_ip = predpred[1] if str(self.node.predpred) != "None" else ""
                 lead = str(self.node.election.leader).split(',')[0] if str(self.node.election.leader) != "None" else ""
                 log = f"""
 IPv4     : {self.node.ip}
 Id       : ({id[len(id)-3: len(id)]}) - {self.node.id} - {self.node.ip}
 Succ     : ({succ_id[len(succ_id)-3: len(succ_id)]}) - {succ_id} - {succ_ip}
 Pred     : ({pred_id[len(pred_id)-3: len(pred_id)]}) - {pred_id} - {pred_ip}
+PredPred : ({predpred_id[len(predpred_id)-3: len(predpred_id)]}) - {predpred_id} - {predpred_ip}
 Leader   : {lead}
 
 ------------------------ Owned -------------------------
@@ -49,10 +53,16 @@ Leader   : {lead}
 📁 Files:
 {self.format_data(self.node.database.files)}
 
----------------------- Replicated ----------------------
+----------------- Replicated Predecessor ----------------
 🔖 Tags:
-{self.format_data(self.node.database.replicated_tags)}
+{self.format_data(self.node.database.replicated_pred_tags)}
 📁 Files:
-{self.format_data(self.node.database.replicated_files)}
+{self.format_data(self.node.database.replicated_pred_files)}
+
+----------------- Replicated Successor ------------------
+🔖 Tags:
+{self.format_data(self.node.database.replicated_succ_tags)}
+📁 Files:
+{self.format_data(self.node.database.replicated_succ_files)}
 """
                 file.write(log)

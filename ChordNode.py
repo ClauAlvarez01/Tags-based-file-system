@@ -15,6 +15,7 @@ class ChordNode:
         self.ref: ChordNodeReference = ChordNodeReference(self.ip, self.chord_port)
         self.succ: ChordNodeReference = self.ref
         self.pred: ChordNodeReference = None
+        self.predpred: ChordNodeReference = None
         self.m = m  # Number of bits in the hash/key space
         self.finger = [self.ref] * self.m  # Finger table
         self.next = 0  # Finger table index to fix next
@@ -95,17 +96,20 @@ class ChordNode:
                 raise Exception(f"There is no node using the address {node.ip}")
             
             self.pred = None
+            self.predpred = None
             self.succ = node.lookup(self.id)
             self.election.adopt_leader(node.get_leader())
 
             # Second node joins to chord ring
             if self.succ.succ.id == self.succ.id:
                 self.pred = self.succ
+                self.predpred = self.ref
                 # Notify node he is not alone
                 self.succ.not_alone_notify(self.ref)
         else:
             self.succ = self.ref
             self.pred = None
+            self.predpred = None
             self.election.adopt_leader(self.ip)
 
         print("[*] end join")
@@ -127,12 +131,18 @@ class ChordNode:
                             # Setearlo si no es el mismo
                             if x.id != self.succ.id:
                                 self.succ = x
+                                self.update_replication(False, True, False, False)
                         
                         # Notify mi successor
                         self.succ.notify(self.ref)
+
                         print('[⚖] end stabilize...')
                     else:
                         print("[⚖] 🟢 Already stable")
+
+                    if self.pred and self.pred.check_node():
+                        self.predpred = self.pred.pred
+
                 else:
                     print("[⚖] I lost my successor, waiting for predecesor check...")
 
@@ -146,12 +156,14 @@ class ChordNode:
         else:
             if self.pred is None:
                 self.pred = node
+                self.predpred = node.pred
                 self.update_replication(False, True)
                 
             # Check node still exists
             elif node.check_node():
                 # Check if node is between my predecessor and me
                 if inbetween(node.id, self.pred.id, self.id):
+                    self.predpred = self.pred
                     self.pred = node
                     self.update_replication(True, False)
         print(f"[*] end act...")
@@ -166,9 +178,9 @@ class ChordNode:
         print(f"[*] Node {node.ip} say I am not alone now, acting..")
         self.succ = node
         self.pred = node
-
+        self.predpred = self.ref
         # Update replication with new successor
-        self.update_replication(True, False)
+        self.update_replication(delegate_data=True, case_2=True)
 
         print(f"[*] end act...")
         
@@ -176,20 +188,40 @@ class ChordNode:
     # Check predecessor method to periodically verify if the predecessor is alive
     def check_predecessor(self):
         while True:
-            if self.pred: print("[*] Checking predecesor...")
+            print("[*] Checking predecesor...")
             try:
                 if self.pred and not self.pred.check_node():
                     print("[-] Predecesor failed")
+                    two_in_a_row = False
 
-                    self.pred = self.find_pred(self.pred.id)
-                    self.pred.reverse_notify(self.ref)
+                    if self.predpred.check_node():
+                        self.pred = self.predpred
+                        self.predpred = self.predpred.pred
+
+                    else:
+                        self.pred = self.find_pred(self.predpred.id)
+                        self.predpred = self.pred.pred
+                        two_in_a_row = True
+
 
                     if self.pred.id == self.id:
+                        self.succ = self.ref
                         self.pred = None
+                        self.predpred = None
+                        if two_in_a_row: 
+                            self.update_replication(False, False, True, assume_predpred=self.ip)
+                        else:
+                            self.update_replication(False, False, True)
+                        continue
+
+                    self.pred.reverse_notify(self.ref)
 
                     # Assume 
-                    self.update_replication(False, False, True)
-                        
+                    if two_in_a_row:
+                        # Assume pred pred data
+                        self.update_replication(False, False, True, assume_predpred=self.pred.ip)
+                    else:
+                        self.update_replication(False, False, True)                      
 
             except Exception as e:
                 self.pred = None

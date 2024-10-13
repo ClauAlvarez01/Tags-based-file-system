@@ -17,19 +17,25 @@ def inbetween(k: int, start: int, end: int) -> bool:
 # Function to send 2 messages using a socket and waiting OK confirmation
 def send_2(first_msg: str, second_msg: str, target_ip: str, target_port: int):
         """Sends two messages to target ip, always waiting for OK ack"""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((target_ip, target_port))
-            s.sendall(first_msg.encode('utf-8'))
+
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((target_ip, target_port))
+                s.sendall(first_msg.encode('utf-8'))
+            
+                ack = s.recv(1024).decode('utf-8')
+                if ack != f"{OK}":
+                    raise Exception("ACK negativo")
+                
+                s.sendall(second_msg.encode('utf-8'))
+                
+                ack = s.recv(1024).decode('utf-8')
+                if ack != f"{OK}":
+                    raise Exception("ACK negativo")
+        except:
+            print(f"[*] {target_ip} is dead")
+
         
-            ack = s.recv(1024).decode('utf-8')
-            if ack != f"{OK}":
-                raise Exception("ACK negativo")
-            
-            s.sendall(second_msg.encode('utf-8'))
-            
-            ack = s.recv(1024).decode('utf-8')
-            if ack != f"{OK}":
-                raise Exception("ACK negativo")
 
 # Function to open a socket and send a binary file
 def send_bin(op: str, file_name: str, bin: bytes, target_ip: str, target_port: int, end_msg: bool = False):
